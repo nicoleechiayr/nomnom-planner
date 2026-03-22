@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Meal Planner — Light</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FAF7F2;
+      --surface: #F5F0E8;
+      --card: #FFFFFF;
+      --border: #E8E0D0;
+      --accent: #5C8A5C;
+      --accent-dim: #8AB08A;
+      --accent-glow: rgba(92, 138, 92, 0.08);
+      --warm: #C4874A;
+      --warm-dim: rgba(196, 135, 74, 0.08);
+      --text: #2C2C28;
+      --muted: #9A9488;
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans: 'Nunito', sans-serif;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Background texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 10% 0%, rgba(92,138,92,0.04) 0%, transparent 50%),
+                  radial-gradient(ellipse at 90% 100%, rgba(196,135,74,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 6rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 2.5rem 1.5rem 1.5rem;
+      text-align: center;
+      animation: fadeDown 0.5s ease forwards;
+    }
+
+    .header-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .header h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .header h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    /* SECTIONS */
+    .section {
+      padding: 0 1.5rem;
+      margin-bottom: 1.75rem;
+      animation: fadeUp 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.15s; }
+    .section:nth-child(4) { animation-delay: 0.2s; }
+    .section:nth-child(5) { animation-delay: 0.25s; }
+    .section:nth-child(6) { animation-delay: 0.3s; }
+    .section:nth-child(7) { animation-delay: 0.35s; }
+    .section:nth-child(8) { animation-delay: 0.4s; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .section-num {
+      width: 22px;
+      height: 22px;
+      background: var(--accent-dim);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* MEAL COUNT */
+    .meal-count {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .count-btn {
+      width: 52px;
+      height: 52px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .count-btn:hover { background: var(--accent-glow); }
+
+    .count-display {
+      flex: 1;
+      text-align: center;
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      color: var(--text);
+    }
+
+    .count-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* CHIP SELECTORS */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chip {
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .chip:hover {
+      border-color: var(--accent-dim);
+      color: var(--text);
+    }
+
+    .chip.selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    /* INGREDIENT GROUPS */
+    .ingredient-group {
+      margin-bottom: 1rem;
+    }
+
+    .ingredient-group-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--warm);
+      margin-bottom: 0.5rem;
+      padding-left: 0.25rem;
+    }
+
+    /* VIBE SLIDER */
+    .vibe-track {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 4px;
+      display: flex;
+      gap: 0;
+    }
+
+    .vibe-opt {
+      flex: 1;
+      text-align: center;
+      padding: 0.6rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vibe-opt.selected {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+    }
+
+    /* TEXT INPUT */
+    .text-input {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      font-weight: 400;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+
+    .text-input::placeholder { color: var(--muted); opacity: 0.7; }
+    .text-input:focus { border-color: var(--accent-dim); }
+
+    /* TELEGRAM CONFIG */
+    .config-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+
+    .config-field {
+      margin-bottom: 0.85rem;
+    }
+
+    .config-field:last-child { margin-bottom: 0; }
+
+    .config-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .config-hint {
+      font-size: 0.72rem;
+      color: var(--accent-dim);
+      margin-top: 0.3rem;
+    }
+
+    /* GENERATE BUTTON */
+    .generate-wrap {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1.5rem 1.5rem;
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+      z-index: 100;
+    }
+
+    .generate-btn {
+      width: 100%;
+      padding: 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 16px;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .generate-btn:hover { background: #4A7A4A; transform: translateY(-1px); }
+    .generate-btn:active { transform: translateY(0); }
+    .generate-btn:disabled { background: var(--accent-dim); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+    /* RESULTS */
+    .results-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      overflow-y: auto;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .results-overlay.show { display: block; }
+
+    .results-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-title {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+
+    .results-title em { font-style: italic; color: var(--accent); }
+
+    .back-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.4rem 1rem;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover { color: var(--text); border-color: var(--accent-dim); }
+
+    .results-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      white-space: pre-wrap;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+      font-weight: 300;
+      margin-bottom: 1.25rem;
+    }
+
+    .telegram-status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .telegram-status.sending {
+      background: var(--warm-dim);
+      color: var(--warm);
+      border: 1px solid rgba(232,201,122,0.2);
+    }
+
+    .telegram-status.sent {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(124,184,124,0.2);
+    }
+
+    .telegram-status.error {
+      background: rgba(255,100,100,0.08);
+      color: #FF9090;
+      border: 1px solid rgba(255,100,100,0.15);
+    }
+
+    /* LOADING */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 26, 15, 0.92);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .loading-overlay.show { display: flex; }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loading-text {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .divider-line {
+      height: 1px;
+      background: var(--border);
+      margin: 0.5rem 1.5rem 1.75rem;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <span class="header-icon">🥗</span>
+    <h1>What are we <em>cooking</em><br>this week?</h1>
+    <p>Answer a few questions and I'll plan your meals.</p>
+  </div>
+
+  <!-- 1. MEALS PER TYPE -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">How many of each meal?</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+      <div class="meal-count">
+        <button class="count-btn" onclick="changeTypeCount('breakfast', -1)">&#8722;</button>
+        <div style="text-align:center; flex:1;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:2px;">&#127749; Breakfast</div>
+          <div class="count-display" id="countBreakfast">0</div>
+        </div>
+        <button class="count-btn" onclick="changeTypeCount('breakfast', 1)">+</button>
+      </div>
+      <div class="meal-count">
+        <button class="count-btn" onclick="changeTypeCount('lunch', -1)">&#8722;</button>
+        <div style="text-align:center; flex:1;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:2px;">&#9728;&#65039; Lunch</div>
+          <div class="count-display" id="countLunch">0</div>
+        </div>
+        <button class="count-btn" onclick="changeTypeCount('lunch', 1)">+</button>
+      </div>
+      <div class="meal-count">
+        <button class="count-btn" onclick="changeTypeCount('dinner', -1)">&#8722;</button>
+        <div style="text-align:center; flex:1;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:2px;">&#127769; Dinner</div>
+          <div class="count-display" id="countDinner">0</div>
+        </div>
+        <button class="count-btn" onclick="changeTypeCount('dinner', 1)">+</button>
+      </div>
+      <div class="meal-count">
+        <button class="count-btn" onclick="changeTypeCount('snack', -1)">&#8722;</button>
+        <div style="text-align:center; flex:1;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:2px;">&#127822; Snacks</div>
+          <div class="count-display" id="countSnack">0</div>
+        </div>
+        <button class="count-btn" onclick="changeTypeCount('snack', 1)">+</button>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:var(--muted);">
+      Total: <span id="totalMeals" style="color:var(--accent); font-weight:600;">0</span> meals
+    </div>
+  </div>
+
+    <div class="divider-line"></div>
+
+  <!-- 3. PROTEINS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">What proteins are you feeling?</div>
+    </div>
+    <div class="chips" id="proteins">
+      <div class="chip" data-val="Chicken breast">🍗 Chicken</div>
+      <div class="chip" data-val="Salmon">🐟 Salmon</div>
+      <div class="chip" data-val="Halibut">🐠 Halibut</div>
+      <div class="chip" data-val="Cod fish">🐡 Cod</div>
+      <div class="chip" data-val="Prawns">🦐 Prawns</div>
+      <div class="chip" data-val="Eggs">🥚 Eggs</div>
+      <div class="chip" data-val="Beef">🥩 Beef</div>
+      <div class="chip" data-val="Tofu">🧊 Tofu</div>
+      <div class="chip" data-val="Minced chicken">🍖 Minced Chicken</div>
+      <div class="chip" data-val="Sardines">🐟 Sardines</div>
+    </div>
+  </div>
+
+  <!-- 4. VEGETABLES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Vegetables & ingredients</div>
+    </div>
+
+    <div class="ingredient-group">
+      <div class="ingredient-group-label">🥦 Vegetables</div>
+      <div class="chips" id="veggies">
+        <div class="chip" data-val="Broccoli">Broccoli</div>
+        <div class="chip" data-val="Bok choy">Bok choy</div>
+        <div class="chip" data-val="Spinach">Spinach</div>
+        <div class="chip" data-val="Zucchini">Zucchini</div>
+        <div class="chip" data-val="Carrots">Carrots</div>
+        <div class="chip" data-val="Sweet potato">Sweet potato</div>
+        <div class="chip" data-val="Potatoes">Potatoes</div>
+        <div class="chip" data-val="Red bell pepper">Red bell pepper</div>
+        <div class="chip" data-val="Avocado">Avocado</div>
+        <div class="chip" data-val="Tomatoes">Tomatoes</div>
+        <div class="chip" data-val="Mushrooms">Mushrooms</div>
+        <div class="chip" data-val="Red onion">Red onion</div>
+        <div class="chip" data-val="Celery">Celery</div>
+        <div class="chip" data-val="Asparagus">Asparagus</div>
+        <div class="chip" data-val="Eggplant">Eggplant</div>
+        <div class="chip" data-val="Cucumber">Cucumber</div>
+        <div class="chip" data-val="Romaine lettuce">Romaine lettuce</div>
+        <div class="chip" data-val="Cherry tomatoes">Cherry tomatoes</div>
+        <div class="chip" data-val="Leek">🆕 Leek</div>
+        <div class="chip" data-val="Fennel">🆕 Fennel</div>
+        <div class="chip" data-val="Broccolini">🆕 Broccolini</div>
+        <div class="chip" data-val="Edamame">🆕 Edamame</div>
+        <div class="chip" data-val="Cabbage">🆕 Cabbage</div>
+      </div>
+    </div>
+
+    <div class="ingredient-group">
+      <div class="ingredient-group-label">🧀 Dairy & Eggs</div>
+      <div class="chips" id="dairy">
+        <div class="chip" data-val="Cottage cheese">Cottage cheese</div>
+        <div class="chip" data-val="Greek yoghurt">Greek yoghurt</div>
+        <div class="chip" data-val="Mozzarella">Mozzarella</div>
+        <div class="chip" data-val="Egg whites">Egg whites</div>
+        <div class="chip" data-val="Milk">Milk</div>
+      </div>
+    </div>
+
+    <div class="ingredient-group">
+      <div class="ingredient-group-label">🌾 Pantry</div>
+      <div class="chips" id="pantry">
+        <div class="chip" data-val="Rice">Rice</div>
+        <div class="chip" data-val="Pasta">Pasta</div>
+        <div class="chip" data-val="Wraps">Wraps</div>
+        <div class="chip" data-val="Pearl couscous">Couscous</div>
+        <div class="chip" data-val="Cannellini beans">Cannellini beans</div>
+        <div class="chip" data-val="Chickpeas">Chickpeas</div>
+      </div>
+    </div>
+
+    <div class="ingredient-group">
+      <div class="ingredient-group-label">🍎 Fruits</div>
+      <div class="chips" id="fruits">
+        <div class="chip" data-val="Avocado">Avocado</div>
+        <div class="chip" data-val="Apple">Apple</div>
+        <div class="chip" data-val="Lemon">Lemon</div>
+        <div class="chip" data-val="Grapes">Grapes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider-line"></div>
+
+  <!-- 5. VIBE -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Recipe vibe this week?</div>
+    </div>
+    <div class="vibe-track" id="vibeTrack">
+      <div class="vibe-opt" data-val="Familiar & comforting">😌 Familiar</div>
+      <div class="vibe-opt selected" data-val="Mix of familiar and new">✨ Mix it up</div>
+      <div class="vibe-opt" data-val="Adventurous & new">🌶️ Adventurous</div>
+    </div>
+  </div>
+
+  <!-- 6. ANYTHING TO AVOID -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Anything to avoid this week?</div>
+    </div>
+    <textarea class="text-input" id="avoid" rows="2" placeholder="e.g. no red meat, avoiding dairy, not in the mood for pasta..."></textarea>
+  </div>
+
+  <!-- 7. EXTRA INGREDIENTS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">Anything else to add?</div>
+    </div>
+    <textarea class="text-input" id="extras" rows="2" placeholder="e.g. I also have kimchi, dill, pine nuts..."></textarea>
+  </div>
+
+  <div class="divider-line"></div>
+
+  <!-- 8. TELEGRAM CONFIG -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">Telegram settings</div>
+    </div>
+    <div class="config-card">
+      <div class="config-field">
+        <label class="config-label">Bot Token</label>
+        <input type="password" class="text-input" id="botToken" placeholder="123456789:ABCdefGHI..."/>
+        <div class="config-hint">From @BotFather on Telegram</div>
+      </div>
+      <div class="config-field">
+        <label class="config-label">Your Chat ID</label>
+        <input type="text" class="text-input" id="chatId" placeholder="123456789"/>
+        <div class="config-hint">From @userinfobot on Telegram</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 5rem;"></div>
+</div>
+
+<!-- GENERATE BUTTON -->
+<div class="generate-wrap">
+  <button class="generate-btn" id="generateBtn" onclick="generateMealPlan()">
+    🍽️ Generate My Meal Plan
+  </button>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Cooking up your plan...</div>
+</div>
+
+<!-- RESULTS -->
+<div class="results-overlay" id="resultsOverlay">
+  <div class="results-inner">
+    <div class="results-header">
+      <div class="results-title">Your <em>Meal Plan</em></div>
+      <button class="back-btn" onclick="closeResults()">← Back</button>
+    </div>
+    <div class="results-content" id="resultsContent"></div>
+    <div id="telegramStatus"></div>
+  </div>
+</div>
+
+<script>
+  // --- STATE ---
+  const mealCounts = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+
+  function changeTypeCount(type, delta) {
+    mealCounts[type] = Math.max(0, Math.min(7, mealCounts[type] + delta));
+    const id = 'count' + type.charAt(0).toUpperCase() + type.slice(1);
+    document.getElementById(id).textContent = mealCounts[type];
+    const total = Object.values(mealCounts).reduce((a, b) => a + b, 0);
+    document.getElementById('totalMeals').textContent = total;
+  }
+
+  // --- CHIP TOGGLE ---
+  document.querySelectorAll('.chips').forEach(group => {
+    group.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      chip.classList.toggle('selected');
+    });
+  });
+
+  // --- VIBE TOGGLE ---
+  document.querySelectorAll('.vibe-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.vibe-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+
+  // --- COLLECT FORM DATA ---
+  function getSelected(groupId) {
+    return [...document.querySelectorAll(`#${groupId} .chip.selected`)]
+      .map(c => c.dataset.val);
+  }
+
+  function getVibe() {
+    const sel = document.querySelector('.vibe-opt.selected');
+    return sel ? sel.dataset.val : 'Mix of familiar and new';
+  }
+
+  // --- LOADING MESSAGES ---
+  const loadingMessages = [
+    "Cooking up your plan...",
+    "Checking nutritional balance...",
+    "Finding fresh recipe ideas...",
+    "Building your shopping list..."
+  ];
+  let loadingIdx = 0;
+  let loadingInterval;
+
+  function startLoading() {
+    loadingIdx = 0;
+    document.getElementById('loadingText').textContent = loadingMessages[0];
+    loadingInterval = setInterval(() => {
+      loadingIdx = (loadingIdx + 1) % loadingMessages.length;
+      document.getElementById('loadingText').textContent = loadingMessages[loadingIdx];
+    }, 2000);
+    document.getElementById('loadingOverlay').classList.add('show');
+    document.getElementById('generateBtn').disabled = true;
+  }
+
+  function stopLoading() {
+    clearInterval(loadingInterval);
+    document.getElementById('loadingOverlay').classList.remove('show');
+    document.getElementById('generateBtn').disabled = false;
+  }
+
+  // --- GENERATE ---
+  async function generateMealPlan() {
+    const totalMeals = Object.values(mealCounts).reduce((a, b) => a + b, 0);
+    if (totalMeals === 0) { alert('Please add at least one meal!'); return; }
+    const mealBreakdown = [
+      mealCounts.breakfast > 0 ? mealCounts.breakfast + ' breakfast' : '',
+      mealCounts.lunch > 0 ? mealCounts.lunch + ' lunch' : '',
+      mealCounts.dinner > 0 ? mealCounts.dinner + ' dinner' : '',
+      mealCounts.snack > 0 ? mealCounts.snack + ' snack' : ''
+    ].filter(Boolean).join(', ');
+    const proteins = getSelected('proteins');
+    const veggies = getSelected('veggies');
+    const dairy = getSelected('dairy');
+    const pantry = getSelected('pantry');
+    const fruits = getSelected('fruits');
+    const vibe = getVibe();
+    const avoid = document.getElementById('avoid').value.trim();
+    const extras = document.getElementById('extras').value.trim();
+
+    if (proteins.length === 0) {
+      alert('Please select at least one protein!');
+      return;
+    }
+
+    const allIngredients = [...veggies, ...dairy, ...pantry, ...fruits];
+
+    const prompt = `You are a personal nutritionist and creative recipe assistant for Nicole.
+
+Nicole's preferences:
+- Number of meals needed: ${mealCount}
+- Meal types: ${mealTypes.join(', ') || 'Any'}
+- Proteins she wants this week: ${proteins.join(', ')}
+- Ingredients she has selected: ${allIngredients.length > 0 ? allIngredients.join(', ') : 'None specified'}
+- Additional ingredients: ${extras || 'None'}
+- Vibe: ${vibe}
+- Things to avoid: ${avoid || 'Nothing specific'}
+
+Please suggest exactly ${totalMeals} high protein, low calorie, low fat recipes.
+
+Rules:
+- Use ONLY the proteins and ingredients Nicole has selected (plus basic pantry staples like olive oil, salt, pepper, basic spices)
+- Each recipe must be distinct — different cuisines or cooking styles
+- Favour Asian, Mediterranean and Mexican-inspired flavours
+- Keep instructions simple for a weeknight cook (max 6 steps)
+- Avoid heavy cream, butter, excessive oil
+- If vibe is adventurous, suggest something Nicole likely hasn't tried before
+- If familiar, keep it comforting and straightforward
+
+For each recipe use EXACTLY this format:
+🍽️ RECIPE [number]: [Recipe Name]
+📊 Macros (per serving): ~[X] cal | [X]g protein | [X]g fat
+🛒 Ingredients:
+• [ingredient]
+• [ingredient]
+👩‍🍳 Instructions:
+1. [step]
+2. [step]
+---
+
+After all recipes, add a section:
+🛒 CONSOLIDATED SHOPPING LIST
+Group by: Proteins | Vegetables | Dairy | Pantry
+Only list items Nicole needs to buy (not basic spices/oil).`;
+
+    startLoading();
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 3000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const result = data.content.map(b => b.text || '').join('');
+
+      stopLoading();
+      showResults(result);
+
+      // Send to Telegram
+      const botToken = document.getElementById('botToken').value.trim();
+      const chatId = document.getElementById('chatId').value.trim();
+      if (botToken && chatId) {
+        sendToTelegram(botToken, chatId, result);
+      }
+
+    } catch (err) {
+      stopLoading();
+      alert('Something went wrong. Please try again.');
+      console.error(err);
+    }
+  }
+
+  // --- SHOW RESULTS ---
+  function showResults(text) {
+    document.getElementById('resultsContent').textContent = text;
+    document.getElementById('telegramStatus').innerHTML = '';
+    document.getElementById('resultsOverlay').classList.add('show');
+    document.getElementById('resultsOverlay').scrollTop = 0;
+  }
+
+  function closeResults() {
+    document.getElementById('resultsOverlay').classList.remove('show');
+  }
+
+  // --- SEND TO TELEGRAM ---
+  async function sendToTelegram(token, chatId, text) {
+    const statusEl = document.getElementById('telegramStatus');
+    statusEl.innerHTML = `<div class="telegram-status sending">📤 Sending to Telegram...</div>`;
+
+    // Split into chunks if too long (Telegram max 4096 chars)
+    const chunks = [];
+    const maxLen = 4000;
+    for (let i = 0; i < text.length; i += maxLen) {
+      chunks.push(text.substring(i, i + maxLen));
+    }
+
+    try {
+      for (const chunk of chunks) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: chunk })
+        });
+      }
+      statusEl.innerHTML = `<div class="telegram-status sent">✅ Sent to Telegram!</div>`;
+    } catch (err) {
+      statusEl.innerHTML = `<div class="telegram-status error">❌ Telegram send failed. Check your bot token and chat ID.</div>`;
+    }
+  }
+</script>
+</body>
+</html>
