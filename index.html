@@ -647,6 +647,17 @@ Proteins | Vegetables | Dairy | Pantry`;
         body: JSON.stringify({ messages:[{role:'user',content:prompt}] })
       });
       const data = await res.json();
+      console.log('API response:', JSON.stringify(data));
+      if (data.error) {
+        stopLoader();
+        alert('API Error: ' + (data.error.message || JSON.stringify(data.error)));
+        return;
+      }
+      if (!data.content) {
+        stopLoader();
+        alert('Unexpected response: ' + JSON.stringify(data));
+        return;
+      }
       const result = data.content.map(b=>b.text||'').join('');
       stopLoader();
       showSheet(result);
@@ -655,7 +666,7 @@ Proteins | Vegetables | Dairy | Pantry`;
       if (token && chatId) sendTelegram(token, chatId, result);
     } catch(e) {
       stopLoader();
-      alert('Something went wrong. Please try again.');
+      alert('Error: ' + e.message);
     }
   }
 
