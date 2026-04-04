@@ -6,711 +6,200 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="theme-color" content="#FAF8F4"/>
-  <title>Meal Planner</title>
+  <title>Meal Planner | Phase 1</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
     :root {
-      --bg: #FAF8F4;
-      --card: #FFFFFF;
-      --grouped: #F2EFE9;
-      --separator: rgba(0,0,0,0.06);
-      --border: rgba(0,0,0,0.08);
-      --accent: #4A7C59;
-      --accent-light: #EBF3EE;
-      --accent-text: #2D5C3E;
-      --warm: #C4874A;
-      --warm-light: #FBF0E6;
-      --text: #1C1C1E;
-      --text2: #3C3C43;
-      --text3: #8E8E93;
-      --text4: #AEAEB2;
-      --red: #FF3B30;
-      --sans: -apple-system, 'Helvetica Neue', sans-serif;
+      --bg: #FAF8F4; --card: #FFFFFF; --grouped: #F2EFE9; --separator: rgba(0,0,0,0.06);
+      --border: rgba(0,0,0,0.08); --accent: #4A7C59; --accent-light: #EBF3EE;
+      --accent-text: #2D5C3E; --warm: #C4874A; --warm-light: #FBF0E6;
+      --text: #1C1C1E; --text2: #3C3C43; --text3: #8E8E93; --text4: #AEAEB2;
+      --red: #FF3B30; --sans: -apple-system, 'Helvetica Neue', sans-serif;
       --serif: 'Playfair Display', Georgia, serif;
     }
-
-    html, body { min-height: 100%; background: var(--bg); }
-
-    body {
-      font-family: var(--sans);
-      color: var(--text);
-      font-size: 16px;
-      line-height: 1.4;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .status-bar { height: env(safe-area-inset-top, 44px); background: var(--bg); }
-
-    .nav-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px; height: 52px; background: var(--bg);
-      position: sticky; top: 0; z-index: 50;
-    }
-    .nav-bar::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-      height: 0.5px; background: var(--separator);
-    }
-    .nav-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; }
+    html, body { min-height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; background: var(--bg); position: sticky; top: 0; z-index: 50; }
+    .nav-bar::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 0.5px; background: var(--separator); }
+    .nav-title { font-size: 1.05rem; font-weight: 600; }
     .nav-sub { font-size: 0.68rem; color: var(--text3); text-align: center; }
-    .nav-reset { font-size: 0.95rem; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 6px 0; }
-    .nav-placeholder { width: 50px; }
-
-    .scroll-body { padding-bottom: 110px; }
-
     .hero { padding: 20px 20px 12px; text-align: center; }
     .hero-emoji { font-size: 3rem; display: block; margin-bottom: 8px; }
-    .hero h1 { font-family: var(--serif); font-size: 1.65rem; font-weight: 400; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 5px; }
+    .hero h1 { font-family: var(--serif); font-size: 1.65rem; font-weight: 400; line-height: 1.2; }
     .hero h1 em { font-style: italic; color: var(--accent); }
-    .hero p { font-size: 0.85rem; color: var(--text3); }
-
     .section { margin-top: 24px; }
-    .section-label {
-      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; color: var(--text3);
-      padding: 0 20px; margin-bottom: 6px;
-    }
-
-    /* iOS Grouped List */
-    .grouped {
-      background: var(--card);
-      border-top: 0.5px solid var(--separator);
-      border-bottom: 0.5px solid var(--separator);
-    }
-    .grouped-row {
-      display: flex; align-items: center; padding: 0 20px;
-      min-height: 52px; position: relative;
-    }
-    .grouped-row + .grouped-row::before {
-      content: ''; position: absolute; top: 0; left: 20px; right: 0;
-      height: 0.5px; background: var(--separator);
-    }
+    .section-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 0 20px; margin-bottom: 6px; }
+    .grouped { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
+    .grouped-row { display: flex; align-items: center; padding: 0 20px; min-height: 52px; position: relative; }
     .row-emoji { font-size: 1.4rem; margin-right: 12px; width: 28px; text-align: center; }
-    .row-label { flex: 1; font-size: 1.05rem; font-weight: 500; color: var(--text); }
-
-    /* Stepper */
+    .row-label { flex: 1; font-size: 1.05rem; font-weight: 500; }
     .stepper { display: flex; align-items: center; background: var(--grouped); border-radius: 8px; overflow: hidden; }
-    .step-btn {
-      width: 34px; height: 32px; background: none; border: none;
-      color: var(--accent); font-size: 1.25rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .step-btn:active { background: rgba(0,0,0,0.05); }
-    .step-div { width: 0.5px; height: 18px; background: var(--border); }
-    .step-val { width: 34px; text-align: center; font-size: 0.92rem; font-weight: 600; color: var(--text); }
-
-    .total-badge {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      margin: 10px 20px 0; padding: 10px 16px;
-      background: var(--accent-light); border-radius: 10px;
-      font-size: 0.83rem; color: var(--accent-text); font-weight: 500;
-    }
-
-    /* Chips */
-    .chip-section {
-      background: var(--card);
-      border-top: 0.5px solid var(--separator);
-      border-bottom: 0.5px solid var(--separator);
-      padding: 14px 20px;
-    }
-    .chip-group-title {
-      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; color: var(--text3); margin-bottom: 8px; margin-top: 12px;
-    }
-    .chip-group-title:first-child { margin-top: 0; }
+    .step-btn { width: 34px; height: 32px; background: none; border: none; color: var(--accent); font-size: 1.25rem; cursor: pointer; }
+    .step-val { width: 34px; text-align: center; font-size: 0.92rem; font-weight: 600; }
+    .chip-section { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); padding: 14px 20px; }
     .chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .chip {
-      padding: 6px 13px; border-radius: 100px;
-      border: 1.5px solid var(--border); background: var(--bg);
-      color: var(--text2); font-size: 0.82rem; font-weight: 500;
-      cursor: pointer; transition: all 0.15s; user-select: none;
-    }
-    .chip:active { transform: scale(0.95); }
+    .chip { padding: 6px 13px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--bg); font-size: 0.82rem; font-weight: 500; }
     .chip.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent-text); }
-    .chip.new { border-color: rgba(196,135,74,0.4); color: var(--warm); background: var(--warm-light); font-size: 0.78rem; }
-    .chip.new.selected { border-color: var(--warm); }
-
-    /* Segmented */
-    .segmented {
-      margin: 0 20px; display: flex; background: var(--grouped);
-      border-radius: 10px; padding: 3px; gap: 2px;
-    }
-    .seg {
-      flex: 1; text-align: center; padding: 7px 4px; border-radius: 8px;
-      font-size: 0.78rem; font-weight: 500; color: var(--text3);
-      cursor: pointer; transition: all 0.18s; user-select: none;
-    }
-    .seg.selected { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-
-    /* Text areas */
-    .input-section {
-      background: var(--card);
-      border-top: 0.5px solid var(--separator);
-      border-bottom: 0.5px solid var(--separator);
-      padding: 12px 20px;
-    }
-    textarea {
-      width: 100%; background: var(--grouped); border: none; border-radius: 10px;
-      padding: 10px 14px; color: var(--text); font-family: var(--sans);
-      font-size: 0.88rem; resize: none; outline: none; line-height: 1.5;
-    }
-    textarea::placeholder { color: var(--text4); }
-
-    /* Config */
-    .cfg-input {
-      flex: 1; background: none; border: none; outline: none;
-      font-family: var(--sans); font-size: 0.9rem; color: var(--text);
-      text-align: right; min-width: 0;
-    }
-    .cfg-input::placeholder { color: var(--text4); }
-
-    /* Generate */
-    .gen-wrap {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
-      background: rgba(250,248,244,0.93);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-top: 0.5px solid var(--separator);
-    }
-    .gen-btn {
-      width: 100%; padding: 15px; background: var(--accent); color: #fff;
-      border: none; border-radius: 14px; font-family: var(--sans);
-      font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
-      cursor: pointer; transition: all 0.15s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .gen-btn:active { transform: scale(0.98); background: #3A6449; }
-    .gen-btn:disabled { background: var(--text4); cursor: not-allowed; transform: none; }
-
-    /* Sheet */
-    .sheet-bg {
-      display: none; position: fixed; inset: 0; z-index: 200;
-      background: rgba(0,0,0,0.35); align-items: flex-end;
-    }
-    .sheet-bg.show { display: flex; }
-    .sheet {
-      width: 100%; max-height: 92vh; background: var(--card);
-      border-radius: 20px 20px 0 0; overflow: hidden;
-      display: flex; flex-direction: column;
-      animation: slideUp 0.32s cubic-bezier(0.32,0.72,0,1);
-    }
-    .sheet-handle { width: 36px; height: 5px; background: var(--border); border-radius: 3px; margin: 10px auto 0; flex-shrink: 0; }
-    .sheet-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 20px 12px; border-bottom: 0.5px solid var(--separator); flex-shrink: 0;
-    }
-    .sheet-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 400; }
-    .sheet-title em { font-style: italic; color: var(--accent); }
-    .sheet-x {
-      width: 28px; height: 28px; background: var(--grouped); border: none; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 0.72rem; color: var(--text3); font-weight: 700;
-    }
-    .sheet-body { overflow-y: auto; padding: 16px 20px 32px; flex: 1; }
-    .sheet-text { white-space: pre-wrap; font-size: 0.87rem; line-height: 1.75; color: var(--text2); }
-
-    .tg-pill {
-      display: flex; align-items: center; gap: 8px;
-      padding: 11px 15px; border-radius: 12px; font-size: 0.83rem; font-weight: 500; margin-top: 16px;
-    }
-    .tg-pill.sending { background: var(--warm-light); color: var(--warm); }
-    .tg-pill.sent { background: var(--accent-light); color: var(--accent-text); }
-    .tg-pill.error { background: #FFF0F0; color: var(--red); }
-
-    /* Loader */
-    .loader {
-      display: none; position: fixed; inset: 0; z-index: 300;
-      background: rgba(250,248,244,0.88); backdrop-filter: blur(10px);
-      flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-    }
+    .input-section { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); padding: 12px 20px; }
+    textarea { width: 100%; background: var(--grouped); border: none; border-radius: 10px; padding: 10px 14px; font-family: var(--sans); font-size: 0.88rem; resize: none; outline: none; }
+    .gen-wrap { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: rgba(250,248,244,0.93); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator); }
+    .gen-btn { width: 100%; padding: 15px; background: var(--accent); color: #fff; border: none; border-radius: 14px; font-weight: 600; cursor: pointer; }
+    .loader { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(250,248,244,0.88); backdrop-filter: blur(10px); flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
     .loader.show { display: flex; }
     .spin { width: 42px; height: 42px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    .loader-txt { font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--text3); }
-
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .add-row {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 8px; padding-top: 8px;
-      border-top: 0.5px solid var(--separator);
-    }
-    .add-input {
-      flex: 1; background: var(--grouped); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 7px 12px; font-family: var(--sans);
-      font-size: 0.83rem; color: var(--text); outline: none;
-    }
-    .add-input:focus { border-color: var(--accent); }
-    .add-input::placeholder { color: var(--text4); }
-    .add-btn {
-      background: var(--accent-light); border: 1.5px solid var(--accent);
-      border-radius: 8px; padding: 7px 14px; color: var(--accent-text);
-      font-family: var(--sans); font-size: 0.83rem; font-weight: 600;
-      cursor: pointer; white-space: nowrap; transition: all 0.15s;
-    }
-    .add-btn:active { background: var(--accent); color: #fff; }
+    .sheet-bg { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.35); align-items: flex-end; }
+    .sheet-bg.show { display: flex; }
+    .sheet { width: 100%; max-height: 92vh; background: var(--card); border-radius: 20px 20px 0 0; overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.32s cubic-bezier(0.32,0.72,0,1); }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet-body { overflow-y: auto; padding: 16px 20px 32px; flex: 1; white-space: pre-wrap; font-size: 0.87rem; line-height: 1.75; }
   </style>
 </head>
 <body>
 
-<div class="status-bar"></div>
-
 <div class="nav-bar">
-  <div class="nav-placeholder"></div>
+  <div style="width:50px"></div>
   <div style="text-align:center;">
-    <div class="nav-title">Meal Planner</div>
-    <div class="nav-sub">Weekly AI Recipes</div>
+    <div class="nav-title">NomNom Planner</div>
+    <div class="nav-sub">Supabase Integrated</div>
   </div>
-  <button class="nav-reset" onclick="resetAll()">Reset</button>
+  <div style="width:50px"></div>
 </div>
 
-<div class="scroll-body">
-
+<div style="padding-bottom: 110px;">
   <div class="hero">
     <span class="hero-emoji">🥗</span>
-    <h1>What are we <em>cooking</em><br>this week?</h1>
-    <p>Pick your preferences and get a personalised meal plan.</p>
+    <h1>Your <em>Smart</em> Fridge</h1>
+    <p>Everything listed below is pulled from your Supabase inventory.</p>
   </div>
 
-  <!-- MEALS -->
   <div class="section">
-    <div class="section-label">Meals this week</div>
+    <div class="section-label">Meals Needed</div>
     <div class="grouped">
       <div class="grouped-row">
-        <div class="row-emoji">🌅</div>
-        <div class="row-label">Breakfast</div>
-        <div class="stepper">
-          <button class="step-btn" onclick="changeCount('breakfast',-1)">−</button>
-          <div class="step-div"></div>
-          <div class="step-val" id="cBreakfast">0</div>
-          <div class="step-div"></div>
-          <button class="step-btn" onclick="changeCount('breakfast',1)">+</button>
-        </div>
-      </div>
-      <div class="grouped-row">
-        <div class="row-emoji">☀️</div>
-        <div class="row-label">Lunch</div>
+        <div class="row-emoji">☀️</div><div class="row-label">Lunch</div>
         <div class="stepper">
           <button class="step-btn" onclick="changeCount('lunch',-1)">−</button>
-          <div class="step-div"></div>
           <div class="step-val" id="cLunch">0</div>
-          <div class="step-div"></div>
           <button class="step-btn" onclick="changeCount('lunch',1)">+</button>
         </div>
       </div>
       <div class="grouped-row">
-        <div class="row-emoji">🌙</div>
-        <div class="row-label">Dinner</div>
+        <div class="row-emoji">🌙</div><div class="row-label">Dinner</div>
         <div class="stepper">
           <button class="step-btn" onclick="changeCount('dinner',-1)">−</button>
-          <div class="step-div"></div>
           <div class="step-val" id="cDinner">0</div>
-          <div class="step-div"></div>
           <button class="step-btn" onclick="changeCount('dinner',1)">+</button>
         </div>
       </div>
-      <div class="grouped-row">
-        <div class="row-emoji">🍎</div>
-        <div class="row-label">Snacks</div>
-        <div class="stepper">
-          <button class="step-btn" onclick="changeCount('snack',-1)">−</button>
-          <div class="step-div"></div>
-          <div class="step-val" id="cSnack">0</div>
-          <div class="step-div"></div>
-          <button class="step-btn" onclick="changeCount('snack',1)">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="total-badge">🍽️ <span id="totalCount">0</span> meals planned this week</div>
-  </div>
-
-  <!-- PROTEINS -->
-  <div class="section">
-    <div class="section-label">Proteins</div>
-    <div class="chip-section">
-      <div class="chips" id="proteins">
-        <div class="chip" data-val="Chicken breast">🍗 Chicken</div>
-        <div class="chip" data-val="Salmon">🐟 Salmon</div>
-        <div class="chip" data-val="Halibut">🐠 Halibut</div>
-        <div class="chip" data-val="Cod fish">🐡 Cod</div>
-        <div class="chip" data-val="Prawns">🦐 Prawns</div>
-        <div class="chip" data-val="Eggs">🥚 Eggs</div>
-        <div class="chip" data-val="Beef">🥩 Beef</div>
-        <div class="chip" data-val="Tofu">🧊 Tofu</div>
-        <div class="chip" data-val="Minced chicken">🍖 Minced Chicken</div>
-        <div class="chip" data-val="Sardines">🐟 Sardines</div>
-      </div>
-      <div class="add-row">
-        <input class="add-input" id="addProtein" placeholder="Add a protein..." onkeydown="if(event.key==='Enter')addChip('proteins','addProtein')"/>
-        <button class="add-btn" onclick="addChip('proteins','addProtein')">+ Add</button>
-      </div>
     </div>
   </div>
 
-  <!-- INGREDIENTS -->
-  <div class="section">
-    <div class="section-label">Vegetables & Ingredients</div>
-    <div class="chip-section" id="ingredients">
-      <div class="chip-group-title">🥦 Vegetables</div>
-      <div class="chips">
-        <div class="chip" data-val="Broccoli">Broccoli</div>
-        <div class="chip" data-val="Bok choy">Bok choy</div>
-        <div class="chip" data-val="Spinach">Spinach</div>
-        <div class="chip" data-val="Zucchini">Zucchini</div>
-        <div class="chip" data-val="Carrots">Carrots</div>
-        <div class="chip" data-val="Sweet potato">Sweet potato</div>
-        <div class="chip" data-val="Potatoes">Potatoes</div>
-        <div class="chip" data-val="Red bell pepper">Bell pepper</div>
-        <div class="chip" data-val="Avocado">Avocado</div>
-        <div class="chip" data-val="Tomatoes">Tomatoes</div>
-        <div class="chip" data-val="Mushrooms">Mushrooms</div>
-        <div class="chip" data-val="Red onion">Red onion</div>
-        <div class="chip" data-val="Celery">Celery</div>
-        <div class="chip" data-val="Asparagus">Asparagus</div>
-        <div class="chip" data-val="Eggplant">Eggplant</div>
-        <div class="chip" data-val="Cucumber">Cucumber</div>
-        <div class="chip" data-val="Romaine lettuce">Romaine</div>
-        <div class="chip" data-val="Cherry tomatoes">Cherry tomatoes</div>
-        <div class="chip new" data-val="Leek">✦ Leek</div>
-        <div class="chip new" data-val="Fennel">✦ Fennel</div>
-        <div class="chip new" data-val="Broccolini">✦ Broccolini</div>
-        <div class="chip new" data-val="Edamame">✦ Edamame</div>
-        <div class="chip new" data-val="Cabbage">✦ Cabbage</div>
-        <div class="chip new" data-val="Kale">✦ Kale</div>
-      </div>
-      <div class="add-row">
-        <input class="add-input" id="addVeg" placeholder="Add a vegetable..." onkeydown="if(event.key==='Enter')addIngredientChip('addVeg')"/>
-        <button class="add-btn" onclick="addIngredientChip('addVeg')">+ Add</button>
-      </div>
-
-      <div class="chip-group-title">🧀 Dairy</div>
-      <div class="chips">
-        <div class="chip" data-val="Cottage cheese">Cottage cheese</div>
-        <div class="chip" data-val="Greek yoghurt">Greek yoghurt</div>
-        <div class="chip" data-val="Mozzarella">Mozzarella</div>
-        <div class="chip" data-val="Egg whites">Egg whites</div>
-        <div class="chip" data-val="Milk">Milk</div>
-      </div>
-      <div class="add-row">
-        <input class="add-input" id="addDairy" placeholder="Add a dairy item..." onkeydown="if(event.key==='Enter')addIngredientChip('addDairy')"/>
-        <button class="add-btn" onclick="addIngredientChip('addDairy')">+ Add</button>
-      </div>
-
-      <div class="chip-group-title">🌾 Pantry</div>
-      <div class="chips">
-        <div class="chip" data-val="Rice">Rice</div>
-        <div class="chip" data-val="Pasta">Pasta</div>
-        <div class="chip" data-val="Wraps">Wraps</div>
-        <div class="chip" data-val="Pearl couscous">Couscous</div>
-        <div class="chip" data-val="Cannellini beans">Cannellini beans</div>
-        <div class="chip" data-val="Chickpeas">Chickpeas</div>
-      </div>
-      <div class="add-row">
-        <input class="add-input" id="addPantry" placeholder="Add a pantry item..." onkeydown="if(event.key==='Enter')addIngredientChip('addPantry')"/>
-        <button class="add-btn" onclick="addIngredientChip('addPantry')">+ Add</button>
-      </div>
-
-      <div class="chip-group-title">🍎 Fruits</div>
-      <div class="chips">
-        <div class="chip" data-val="Apple">Apple</div>
-        <div class="chip" data-val="Lemon">Lemon</div>
-        <div class="chip" data-val="Grapes">Grapes</div>
-      </div>
-      <div class="add-row">
-        <input class="add-input" id="addFruit" placeholder="Add a fruit..." onkeydown="if(event.key==='Enter')addIngredientChip('addFruit')"/>
-        <button class="add-btn" onclick="addIngredientChip('addFruit')">+ Add</button>
-      </div>
-    </div>
+  <div id="dynamic-inventory">
+    <div class="loader-txt" style="text-align:center; padding: 20px; color: var(--text3);">Syncing with Supabase...</div>
   </div>
 
-  <!-- VIBE -->
   <div class="section">
-    <div class="section-label">Recipe vibe</div>
-    <div class="segmented">
-      <div class="seg" data-val="Familiar & comforting">😌 Familiar</div>
-      <div class="seg selected" data-val="Mix of familiar and new">✨ Mix it up</div>
-      <div class="seg" data-val="Adventurous & new">🌶️ Adventurous</div>
-    </div>
-  </div>
-
-  <!-- AVOID -->
-  <div class="section">
-    <div class="section-label">Anything to avoid?</div>
+    <div class="section-label">Add something new?</div>
     <div class="input-section">
-      <textarea id="avoid" rows="2" placeholder="e.g. no red meat, avoiding dairy this week..."></textarea>
+      <textarea id="extras" rows="2" placeholder="e.g. want to buy salmon, need to use up kimchi..."></textarea>
     </div>
   </div>
-
-  <!-- EXTRAS -->
-  <div class="section">
-    <div class="section-label">Extra ingredients to add</div>
-    <div class="input-section">
-      <textarea id="extras" rows="2" placeholder="e.g. kimchi, dill, pine nuts..."></textarea>
-    </div>
-  </div>
-
-  <!-- TELEGRAM -->
-  <div class="section">
-    <div class="section-label">Telegram</div>
-    <div class="grouped">
-      <div class="grouped-row">
-        <div class="row-label">Bot Token</div>
-        <input type="password" class="cfg-input" id="botToken" placeholder="From @BotFather" oninput="saveCreds()"/>
-      </div>
-      <div class="grouped-row">
-        <div class="row-label">Chat ID</div>
-        <input type="text" class="cfg-input" id="chatId" placeholder="From @userinfobot" oninput="saveCreds()"/>
-      </div>
-      <div class="grouped-row" style="padding:10px 20px;">
-        <div style="font-size:0.75rem; color:var(--text3);">🔒 Credentials saved locally on your device</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="height:8px;"></div>
 </div>
 
-<!-- GENERATE BUTTON -->
 <div class="gen-wrap">
-  <button class="gen-btn" id="genBtn" onclick="generate()">
-    🍽️ Generate My Meal Plan
-  </button>
+  <button class="gen-btn" id="genBtn" onclick="generate()">🍽️ Generate Plan</button>
 </div>
 
-<!-- LOADER -->
-<div class="loader" id="loader">
-  <div class="spin"></div>
-  <div class="loader-txt" id="loaderTxt">Cooking up your plan...</div>
-</div>
+<div class="loader" id="loader"><div class="spin"></div><div class="loader-txt">Consulting the Chef...</div></div>
 
-<!-- RESULTS SHEET -->
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-head">
-      <div class="sheet-title">Your <em>Meal Plan</em></div>
-      <button class="sheet-x" onclick="closeSheet()">✕</button>
-    </div>
-    <div class="sheet-body">
-      <div class="sheet-text" id="sheetText"></div>
-      <div id="tgStatus"></div>
-    </div>
+    <div class="sheet-body" id="sheetText"></div>
+    <button style="padding: 15px; background: var(--grouped); border:none;" onclick="closeSheet()">Close</button>
   </div>
 </div>
 
 <script>
-  const counts = { breakfast:0, lunch:0, dinner:0, snack:0 };
-  const ids = { breakfast:'cBreakfast', lunch:'cLunch', dinner:'cDinner', snack:'cSnack' };
+  // --- CONFIG ---
+  const SUPABASE_URL = 'https://gmxbebwnmundpuvswcku.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
+  
+  // FIXED LINE: Removed 'exports.' for browser compatibility
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const counts = { lunch: 0, dinner: 0 };
+  let currentInventory = [];
 
   function changeCount(type, d) {
     counts[type] = Math.max(0, Math.min(7, counts[type] + d));
-    document.getElementById(ids[type]).textContent = counts[type];
-    document.getElementById('totalCount').textContent = Object.values(counts).reduce((a,b)=>a+b,0);
+    document.getElementById(type === 'lunch' ? 'cLunch' : 'cDinner').textContent = counts[type];
   }
 
-  // Chip toggle
-  document.querySelectorAll('.chip-section, .chip-wrap').forEach(s => {
-    s.addEventListener('click', e => {
-      const c = e.target.closest('.chip');
-      if (c) c.classList.toggle('selected');
+  // --- PHASE 1: LOAD FROM SUPABASE ---
+  async function init() {
+    const { data, error } = await supabaseClient.from('inventory').select('*');
+    if (error) {
+      console.error("Supabase Error:", error);
+      document.getElementById('dynamic-inventory').innerHTML = `<p style="text-align:center; color:red;">Failed to load inventory.</p>`;
+      return;
+    }
+    currentInventory = data;
+    renderInventory(data);
+  }
+
+  function renderInventory(items) {
+    const container = document.getElementById('dynamic-inventory');
+    container.innerHTML = '';
+
+    const categories = [...new Set(items.map(i => i.category))];
+    
+    categories.forEach(cat => {
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `<div class="section-label">${cat}</div>
+                           <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>`;
+      container.appendChild(section);
+
+      const chipBox = document.getElementById(`cat-${cat}`);
+      items.filter(i => i.category === cat).forEach(item => {
+        const chip = document.createElement('div');
+        chip.className = 'chip selected'; 
+        chip.textContent = item.item_name;
+        chipBox.appendChild(chip);
+      });
     });
-  });
-
-  // Segmented
-  document.querySelectorAll('.seg').forEach(s => {
-    s.addEventListener('click', () => {
-      document.querySelectorAll('.seg').forEach(o => o.classList.remove('selected'));
-      s.classList.add('selected');
-    });
-  });
-
-  function getChips(id) {
-    return [...document.querySelectorAll(`#${id} .chip.selected`)].map(c => c.dataset.val);
-  }
-
-  function getAllIngredients() {
-    return [...document.querySelectorAll('#ingredients .chip.selected')].map(c => c.dataset.val);
-  }
-
-  function getVibe() {
-    const s = document.querySelector('.seg.selected');
-    return s ? s.dataset.val : 'Mix of familiar and new';
-  }
-
-  function resetAll() {
-    Object.keys(counts).forEach(k => { counts[k]=0; document.getElementById(ids[k]).textContent=0; });
-    document.getElementById('totalCount').textContent = 0;
-    document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
-    document.querySelectorAll('.seg').forEach(s => s.classList.remove('selected'));
-    document.querySelectorAll('.seg')[1].classList.add('selected');
-    document.getElementById('avoid').value = '';
-    document.getElementById('extras').value = '';
-  }
-
-  const msgs = ["Cooking up your plan...","Checking nutritional balance...","Finding fresh ideas...","Building your shopping list..."];
-  let mIdx=0, mInt;
-
-  function startLoader() {
-    mIdx=0; document.getElementById('loaderTxt').textContent=msgs[0];
-    mInt = setInterval(()=>{ mIdx=(mIdx+1)%msgs.length; document.getElementById('loaderTxt').textContent=msgs[mIdx]; },2200);
-    document.getElementById('loader').classList.add('show');
-    document.getElementById('genBtn').disabled=true;
-  }
-
-  function stopLoader() {
-    clearInterval(mInt);
-    document.getElementById('loader').classList.remove('show');
-    document.getElementById('genBtn').disabled=false;
-  }
-
-  function addChip(groupId, inputId) {
-    const input = document.getElementById(inputId);
-    const val = input.value.trim();
-    if (!val) return;
-    const group = document.getElementById(groupId);
-    const chip = document.createElement('div');
-    chip.className = 'chip selected';
-    chip.dataset.val = val;
-    chip.textContent = val;
-    group.appendChild(chip);
-    input.value = '';
-  }
-
-  function addIngredientChip(inputId) {
-    const input = document.getElementById(inputId);
-    const val = input.value.trim();
-    if (!val) return;
-    // Find the chips div just before this add-row
-    const addRow = input.closest('.add-row');
-    const chipsDiv = addRow.previousElementSibling;
-    const chip = document.createElement('div');
-    chip.className = 'chip selected';
-    chip.dataset.val = val;
-    chip.textContent = val;
-    chipsDiv.appendChild(chip);
-    input.value = '';
   }
 
   async function generate() {
-    const total = Object.values(counts).reduce((a,b)=>a+b,0);
-    if (total===0) { alert('Please add at least one meal!'); return; }
-    const proteins = getChips('proteins');
-    if (proteins.length===0) { alert('Please select at least one protein!'); return; }
+    const total = counts.lunch + counts.dinner;
+    if (total === 0) return alert("Select at least 1 meal!");
 
-    const ingredients = getAllIngredients();
-    const breakdown = [
-      counts.breakfast>0?counts.breakfast+' breakfast':'',
-      counts.lunch>0?counts.lunch+' lunch':'',
-      counts.dinner>0?counts.dinner+' dinner':'',
-      counts.snack>0?counts.snack+' snack':''
-    ].filter(Boolean).join(', ');
+    const inventoryText = currentInventory.map(i => i.item_name).join(', ');
+    const prompt = `Nicole has: ${inventoryText}. Extras: ${document.getElementById('extras').value}. Generate ${total} high-protein recipes.`;
 
-    const prompt = `You are a personal nutritionist and creative recipe assistant for Nicole.
-
-Nicole's preferences this week:
-- Meal breakdown: ${breakdown} (${total} total)
-- Proteins: ${proteins.join(', ')}
-- Ingredients: ${ingredients.length>0?ingredients.join(', '):'flexible'}
-- Extra ingredients: ${document.getElementById('extras').value.trim()||'none'}
-- Vibe: ${getVibe()}
-- Avoid: ${document.getElementById('avoid').value.trim()||'nothing specific'}
-
-Suggest exactly ${total} high protein, low calorie, low fat recipes matching the meal breakdown.
-
-Rules:
-- Use the selected proteins and ingredients (plus basic pantry staples: olive oil, salt, pepper, garlic, basic spices)
-- Each recipe must be distinct — different cuisines or cooking styles
-- Favour Asian, Mediterranean and Mexican-inspired flavours
-- Keep instructions simple for a weeknight (max 6 steps)
-- Avoid heavy cream, butter, excessive oil
-- Label each recipe clearly with its meal type
-
-For each recipe:
-🍽️ [MEAL TYPE] — [Recipe Name]
-📊 ~[X] cal | [X]g protein | [X]g fat
-🛒 Ingredients:
-• [ingredient]
-👩‍🍳 Steps:
-1. [step]
----
-
-End with:
-🛒 SHOPPING LIST
-Proteins | Vegetables | Dairy | Pantry`;
-
-    startLoader();
+    document.getElementById('loader').classList.add('show');
+    
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ messages:[{role:'user',content:prompt}] })
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const data = await res.json();
-      console.log('API response:', JSON.stringify(data));
-      if (data.error) {
-        stopLoader();
-        alert('API Error: ' + (data.error.message || JSON.stringify(data.error)));
-        return;
-      }
-      if (!data.content) {
-        stopLoader();
-        alert('Unexpected response: ' + JSON.stringify(data));
-        return;
-      }
-      const result = data.content.map(b=>b.text||'').join('');
-      stopLoader();
-      showSheet(result);
-      const token = document.getElementById('botToken').value.trim();
-      const chatId = document.getElementById('chatId').value.trim();
-      if (token && chatId) sendTelegram(token, chatId, result);
-    } catch(e) {
-      stopLoader();
-      alert('Error: ' + e.message);
+      document.getElementById('sheetText').textContent = data.content[0].text;
+      document.getElementById('sheetBg').classList.add('show');
+    } catch (e) {
+      alert("Error calling API: " + e.message);
+    } finally {
+      document.getElementById('loader').classList.remove('show');
     }
-  }
-
-  function showSheet(text) {
-    document.getElementById('sheetText').textContent = text;
-    document.getElementById('tgStatus').innerHTML = '';
-    document.getElementById('sheetBg').classList.add('show');
   }
 
   function closeSheet() { document.getElementById('sheetBg').classList.remove('show'); }
 
-  async function sendTelegram(token, chatId, text) {
-    const el = document.getElementById('tgStatus');
-    el.innerHTML = `<div class="tg-pill sending">📤 Sending to Telegram...</div>`;
-    const chunks = [];
-    for (let i=0; i<text.length; i+=4000) chunks.push(text.slice(i,i+4000));
-    try {
-      for (const c of chunks) {
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({chat_id:chatId, text:c})
-        });
-      }
-      el.innerHTML = `<div class="tg-pill sent">✅ Sent to your Telegram!</div>`;
-    } catch {
-      el.innerHTML = `<div class="tg-pill error">❌ Failed. Check bot token and chat ID.</div>`;
-    }
-  }
-
-  // Save & load Telegram credentials
-  function saveCreds() {
-    localStorage.setItem('tg_token', document.getElementById('botToken').value);
-    localStorage.setItem('tg_chatid', document.getElementById('chatId').value);
-  }
-
-  function loadCreds() {
-    const token = localStorage.getItem('tg_token');
-    const chatId = localStorage.getItem('tg_chatid');
-    if (token) document.getElementById('botToken').value = token;
-    if (chatId) document.getElementById('chatId').value = chatId;
-  }
-
-  // Load on startup
-  loadCreds();
+  init();
 </script>
 </body>
 </html>
