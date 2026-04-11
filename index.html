@@ -127,7 +127,6 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
   
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const counts = { lunch: 0, dinner: 0 };
   let currentInventory = [];
 
@@ -136,11 +135,19 @@
     document.getElementById(type === 'lunch' ? 'cLunch' : 'cDinner').textContent = counts[type];
   }
 
-  // --- PHASE 1: LOAD FROM SUPABASE ---
+  // Helper to categorize based on item_name keywords
+  function getCategory(name) {
+    const item = name.toLowerCase();
+    if (item.includes('milk') || item.includes('cheese') || item.includes('tofu') || item.includes('yogurt')) return 'Dairy/Protein';
+    if (item.includes('chicken') || item.includes('salmon') || item.includes('beef') || item.includes('meat')) return 'Meat';
+    if (item.includes('asparagus') || item.includes('tomato') || item.includes('pepper') || item.includes('kimchi')) return 'Produce';
+    if (item.includes('pasta') || item.includes('rice') || item.includes('oats') || item.includes('flour')) return 'Dry Goods';
+    return 'Snacks';
+  }
+
   async function init() {
     const { data, error } = await supabaseClient.from('inventory').select('*');
     if (error) {
-      console.error("Supabase Error:", error);
       document.getElementById('dynamic-inventory').innerHTML = `<p style="text-align:center; color:red;">Failed to load inventory.</p>`;
       return;
     }
@@ -152,29 +159,25 @@
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
 
-    // Change 1 Logic: Defined Order of Categories
-    const preferredOrder = ['Dairy', 'Meat', 'Snacks', 'Dry Goods', 'Produce'];
-    
-    // Catch-all for any categories not in the preferred list
-    const existingCatsInDb = [...new Set(items.map(i => i.category))];
-    const allCategories = [...preferredOrder, ...existingCatsInDb.filter(c => !preferredOrder.includes(c))];
+    // Assigning categories locally since they aren't in the DB column yet
+    const itemsWithCats = items.map(i => ({ ...i, category: getCategory(i.item_name) }));
+    const preferredOrder = ['Meat', 'Dairy/Protein', 'Produce', 'Dry Goods', 'Snacks'];
 
-    allCategories.forEach(cat => {
-      const catItems = items.filter(i => i.category === cat);
-      if (catItems.length === 0) return; // Skip if no items in this category
+    preferredOrder.forEach(cat => {
+      const catItems = itemsWithCats.filter(i => i.category === cat);
+      if (catItems.length === 0) return;
 
       const section = document.createElement('div');
       section.className = 'section';
       section.innerHTML = `
         <div class="section-label">${cat}</div>
-        <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>
+        <div class="chip-section"><div class="chips" id="cat-${cat.replace(/\//g, '')}"></div></div>
       `;
       container.appendChild(section);
 
-      const chipBox = document.getElementById(`cat-${cat}`);
+      const chipBox = document.getElementById(`cat-${cat.replace(/\//g, '')}`);
       catItems.forEach(item => {
         const chip = document.createElement('div');
-        // Toggle selected state on click
         chip.className = 'chip selected'; 
         chip.onclick = () => chip.classList.toggle('selected');
         chip.textContent = item.item_name;
@@ -187,12 +190,13 @@
     const total = counts.lunch + counts.dinner;
     if (total === 0) return alert("Select at least 1 meal!");
 
-    // Only use items that are currently "selected" in the UI
-    const selectedChips = Array.from(document.querySelectorAll('.chip.selected'))
-                               .map(c => c.textContent);
-    
+    const selectedChips = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.textContent);
     const extras = document.getElementById('extras').value;
-    const prompt = `Nicole has: ${selectedChips.join(', ')}. Extras: ${extras}. Generate ${total} high-protein, low-fat recipes.`;
+    
+    // High-Protein/Low-Fat context added to the prompt
+    const prompt = `Nicole has: ${selectedChips.join(', ')}. Extras: ${extras}. 
+    Generate ${total} meal ideas. 
+    Strict Constraints: Keep protein high and fat low. Lead with the main protein source.`;
 
     document.getElementById('loader').classList.add('show');
     
