@@ -39,7 +39,7 @@
     .step-val { width: 34px; text-align: center; font-size: 0.92rem; font-weight: 600; }
     .chip-section { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); padding: 14px 20px; }
     .chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .chip { padding: 6px 13px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--bg); font-size: 0.82rem; font-weight: 500; }
+    .chip { padding: 6px 13px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--bg); font-size: 0.82rem; font-weight: 500; transition: all 0.2s ease; cursor: pointer; }
     .chip.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent-text); }
     .input-section { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); padding: 12px 20px; }
     textarea { width: 100%; background: var(--grouped); border: none; border-radius: 10px; padding: 10px 14px; font-family: var(--sans); font-size: 0.88rem; resize: none; outline: none; }
@@ -126,7 +126,6 @@
   const SUPABASE_URL = 'https://gmxbebwnmundpuvswcku.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
   
-  // FIXED LINE: Removed 'exports.' for browser compatibility
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const counts = { lunch: 0, dinner: 0 };
@@ -150,46 +149,50 @@
   }
 
   function renderInventory(items) {
-  const container = document.getElementById('dynamic-inventory');
-  container.innerHTML = '';
+    const container = document.getElementById('dynamic-inventory');
+    container.innerHTML = '';
 
-  // Define your preferred order here
-  const preferredOrder = ['Dairy', 'Meat', 'Snacks', 'Dry Goods', 'Produce'];
-  
-  // Get any other categories that might exist but aren't in our list
-  const existingCats = [...new Set(items.map(i => i.category))];
-  const allCategories = [...preferredOrder, ...existingCats.filter(c => !preferredOrder.includes(c))];
+    // Change 1 Logic: Defined Order of Categories
+    const preferredOrder = ['Dairy', 'Meat', 'Snacks', 'Dry Goods', 'Produce'];
+    
+    // Catch-all for any categories not in the preferred list
+    const existingCatsInDb = [...new Set(items.map(i => i.category))];
+    const allCategories = [...preferredOrder, ...existingCatsInDb.filter(c => !preferredOrder.includes(c))];
 
-  allCategories.forEach(cat => {
-    const catItems = items.filter(i => i.category === cat);
-    if (catItems.length === 0) return; // Skip empty categories
+    allCategories.forEach(cat => {
+      const catItems = items.filter(i => i.category === cat);
+      if (catItems.length === 0) return; // Skip if no items in this category
 
-    const section = document.createElement('div');
-    section.className = 'section';
-    section.innerHTML = `
-      <div class="section-label">${cat}</div>
-      <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>
-    `;
-    container.appendChild(section);
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `
+        <div class="section-label">${cat}</div>
+        <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>
+      `;
+      container.appendChild(section);
 
-    const chipBox = document.getElementById(`cat-${cat}`);
-    catItems.forEach(item => {
-      const chip = document.createElement('div');
-      // Adding a toggle feature so you can "deselect" items you don't want in the prompt
-      chip.className = 'chip selected'; 
-      chip.onclick = () => chip.classList.toggle('selected');
-      chip.textContent = item.item_name;
-      chipBox.appendChild(chip);
+      const chipBox = document.getElementById(`cat-${cat}`);
+      catItems.forEach(item => {
+        const chip = document.createElement('div');
+        // Toggle selected state on click
+        chip.className = 'chip selected'; 
+        chip.onclick = () => chip.classList.toggle('selected');
+        chip.textContent = item.item_name;
+        chipBox.appendChild(chip);
+      });
     });
-  });
-}
+  }
 
   async function generate() {
     const total = counts.lunch + counts.dinner;
     if (total === 0) return alert("Select at least 1 meal!");
 
-    const inventoryText = currentInventory.map(i => i.item_name).join(', ');
-    const prompt = `Nicole has: ${inventoryText}. Extras: ${document.getElementById('extras').value}. Generate ${total} high-protein recipes.`;
+    // Only use items that are currently "selected" in the UI
+    const selectedChips = Array.from(document.querySelectorAll('.chip.selected'))
+                               .map(c => c.textContent);
+    
+    const extras = document.getElementById('extras').value;
+    const prompt = `Nicole has: ${selectedChips.join(', ')}. Extras: ${extras}. Generate ${total} high-protein, low-fat recipes.`;
 
     document.getElementById('loader').classList.add('show');
     
