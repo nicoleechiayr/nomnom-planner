@@ -135,13 +135,28 @@
     document.getElementById(type === 'lunch' ? 'cLunch' : 'cDinner').textContent = counts[type];
   }
 
-  // Helper to categorize based on item_name keywords
+  // UPDATED Helper: Group Meat & Protein, keep Dairy separate
   function getCategory(name) {
     const item = name.toLowerCase();
-    if (item.includes('milk') || item.includes('cheese') || item.includes('tofu') || item.includes('yogurt')) return 'Dairy/Protein';
-    if (item.includes('chicken') || item.includes('salmon') || item.includes('beef') || item.includes('meat')) return 'Meat';
-    if (item.includes('asparagus') || item.includes('tomato') || item.includes('pepper') || item.includes('kimchi')) return 'Produce';
-    if (item.includes('pasta') || item.includes('rice') || item.includes('oats') || item.includes('flour')) return 'Dry Goods';
+    // Meat & Protein Keywords
+    if (item.includes('chicken') || item.includes('salmon') || item.includes('beef') || 
+        item.includes('meat') || item.includes('tofu') || item.includes('egg') || 
+        item.includes('tempeh') || item.includes('tuna') || item.includes('protein')) {
+      return 'Meat & Protein';
+    }
+    // Dairy Keywords
+    if (item.includes('milk') || item.includes('cheese') || item.includes('yogurt') || item.includes('butter')) {
+      return 'Dairy';
+    }
+    // Produce Keywords
+    if (item.includes('asparagus') || item.includes('tomato') || item.includes('pepper') || 
+        item.includes('kimchi') || item.includes('spinach') || item.includes('onion')) {
+      return 'Produce';
+    }
+    // Dry Goods
+    if (item.includes('pasta') || item.includes('rice') || item.includes('oats') || item.includes('flour')) {
+      return 'Dry Goods';
+    }
     return 'Snacks';
   }
 
@@ -159,9 +174,10 @@
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
 
-    // Assigning categories locally since they aren't in the DB column yet
     const itemsWithCats = items.map(i => ({ ...i, category: getCategory(i.item_name) }));
-    const preferredOrder = ['Meat', 'Dairy/Protein', 'Produce', 'Dry Goods', 'Snacks'];
+    
+    // UPDATED Order
+    const preferredOrder = ['Meat & Protein', 'Dairy', 'Produce', 'Dry Goods', 'Snacks'];
 
     preferredOrder.forEach(cat => {
       const catItems = itemsWithCats.filter(i => i.category === cat);
@@ -169,13 +185,15 @@
 
       const section = document.createElement('div');
       section.className = 'section';
+      // Create a safe ID for the chip container (removing spaces and special chars)
+      const safeId = cat.replace(/[^a-z0-9]/gi, '');
       section.innerHTML = `
         <div class="section-label">${cat}</div>
-        <div class="chip-section"><div class="chips" id="cat-${cat.replace(/\//g, '')}"></div></div>
+        <div class="chip-section"><div class="chips" id="cat-${safeId}"></div></div>
       `;
       container.appendChild(section);
 
-      const chipBox = document.getElementById(`cat-${cat.replace(/\//g, '')}`);
+      const chipBox = document.getElementById(`cat-${safeId}`);
       catItems.forEach(item => {
         const chip = document.createElement('div');
         chip.className = 'chip selected'; 
@@ -193,10 +211,9 @@
     const selectedChips = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.textContent);
     const extras = document.getElementById('extras').value;
     
-    // High-Protein/Low-Fat context added to the prompt
     const prompt = `Nicole has: ${selectedChips.join(', ')}. Extras: ${extras}. 
     Generate ${total} meal ideas. 
-    Strict Constraints: Keep protein high and fat low. Lead with the main protein source.`;
+    Strict Constraints: Keep protein high and fat low. Lead with the main protein source. Highlight macro suitability.`;
 
     document.getElementById('loader').classList.add('show');
     
