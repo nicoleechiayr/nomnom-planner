@@ -150,27 +150,39 @@
   }
 
   function renderInventory(items) {
-    const container = document.getElementById('dynamic-inventory');
-    container.innerHTML = '';
+  const container = document.getElementById('dynamic-inventory');
+  container.innerHTML = '';
 
-    const categories = [...new Set(items.map(i => i.category))];
-    
-    categories.forEach(cat => {
-      const section = document.createElement('div');
-      section.className = 'section';
-      section.innerHTML = `<div class="section-label">${cat}</div>
-                           <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>`;
-      container.appendChild(section);
+  // Define your preferred order here
+  const preferredOrder = ['Dairy', 'Meat', 'Snacks', 'Dry Goods', 'Produce'];
+  
+  // Get any other categories that might exist but aren't in our list
+  const existingCats = [...new Set(items.map(i => i.category))];
+  const allCategories = [...preferredOrder, ...existingCats.filter(c => !preferredOrder.includes(c))];
 
-      const chipBox = document.getElementById(`cat-${cat}`);
-      items.filter(i => i.category === cat).forEach(item => {
-        const chip = document.createElement('div');
-        chip.className = 'chip selected'; 
-        chip.textContent = item.item_name;
-        chipBox.appendChild(chip);
-      });
+  allCategories.forEach(cat => {
+    const catItems = items.filter(i => i.category === cat);
+    if (catItems.length === 0) return; // Skip empty categories
+
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.innerHTML = `
+      <div class="section-label">${cat}</div>
+      <div class="chip-section"><div class="chips" id="cat-${cat}"></div></div>
+    `;
+    container.appendChild(section);
+
+    const chipBox = document.getElementById(`cat-${cat}`);
+    catItems.forEach(item => {
+      const chip = document.createElement('div');
+      // Adding a toggle feature so you can "deselect" items you don't want in the prompt
+      chip.className = 'chip selected'; 
+      chip.onclick = () => chip.classList.toggle('selected');
+      chip.textContent = item.item_name;
+      chipBox.appendChild(chip);
     });
-  }
+  });
+}
 
   async function generate() {
     const total = counts.lunch + counts.dinner;
