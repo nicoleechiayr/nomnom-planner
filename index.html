@@ -1,73 +1,33 @@
-Right now, if you add **prawn** and it isn't in that `if` statement, the logic will fall through to the final `return 'Snacks';` line. Your inventory would show prawns right next to the chocolate and chips—which isn't ideal for meal planning!
-
-Hard-coding is a solid start, but as you grow your "Smart Fridge," you’ll want it to be more resilient. Here are two ways to handle this:
-
-### 1. The Quick Fix (Expanded Keywords)
-You can broaden the "net" by using more generic root words and adding common missing proteins. I've updated the `getCategory` function below to include **prawn**, **fish**, and **turkey**, and added a few more produce items.
-
-```javascript
-function getCategory(name) {
-  const item = name.toLowerCase();
-  
-  // Meat & Protein: Added prawn, fish, turkey, and "seafood"
-  if (/chicken|salmon|beef|meat|tofu|egg|protein|tuna|prawn|fish|turkey|seafood|tempeh|lamb/.test(item)) {
-    return 'Meat & Protein';
-  }
-  // Dairy
-  if (/milk|cheese|yogurt|butter|cream|dairy/.test(item)) {
-    return 'Dairy';
-  }
-  // Produce: Added generic endings like "berry" or "leaf"
-  if (/asparagus|tomato|pepper|kimchi|spinach|onion|broccoli|carrot|cucumber|lettuce|berry|fruit|veg/.test(item)) {
-    return 'Produce';
-  }
-  // Dry Goods
-  if (/pasta|rice|oats|flour|bread|grain|bean|lentil|quinoa|noodle/.test(item)) {
-    return 'Dry Goods';
-  }
-  return 'Snacks';
-}
-```
-
-### 2. The Pro Fix (Database-Driven)
-Since you’re already using **Supabase**, the "Agent Strategist" move is to add a `category` column to your `inventory` table in Postgres.
-
-* **How it works:** When your n8n workflow parses the Telegram message, you let the **Message a model** node decide the category (since the LLM already knows a prawn is a protein).
-* **The Result:** Your SQL node inserts the category into the database. Your frontend then just reads `item.category` directly from the row instead of trying to guess it using JavaScript.
-
-### Updated Generate Function
-I've updated the `generate` function in your script to ensure the prompt specifically asks for **Breakfast, Lunch, and Dinner** ideas based on your new categories:
-
-```javascript
-async function generate() {
-  const total = counts.breakfast + counts.lunch + counts.dinner;
-  if (total === 0) return alert("Select at least 1 meal!");
-
-  const selectedChips = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.textContent);
-  const extras = document.getElementById('extras').value;
-  
-  // Refined prompt to give the AI specific targets for the three meal types
-  const prompt = `Nicole has: ${selectedChips.join(', ')}. Extras: ${extras}. 
-  Plan ${total} meals: ${counts.breakfast} Breakfast(s), ${counts.lunch} Lunch(es), and ${counts.dinner} Dinner(s). 
-  Focus: High protein, low fat. List macros for each.`;
-
-  document.getElementById('loader').classList.add('show');
-  
-  try {
-    const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-    });
-    const data = await res.json();
-    document.getElementById('sheetText').textContent = data.content[0].text;
-    document.getElementById('sheetBg').classList.add('show');
-  } catch (e) {
-    alert("Error: " + e.message);
-  } finally {
-    document.getElementById('loader').classList.remove('show');
-  }
-}
-```
-
-Would you like help adjusting the n8n "Message a model" prompt so it starts categorizing these items before they even hit the database?
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="theme-color" content="#FAF8F4"/>
+  <title>NomNom Planner | Smart Fridge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #FAF8F4; --card: #FFFFFF; --grouped: #F2EFE9; --separator: rgba(0,0,0,0.06);
+      --border: rgba(0,0,0,0.08); --accent: #4A7C59; --accent-light: #EBF3EE;
+      --accent-text: #2D5C3E; --text: #1C1C1E; --text3: #8E8E93; --sans: -apple-system, 'Helvetica Neue', sans-serif;
+      --serif: 'Playfair Display', Georgia, serif;
+    }
+    html, body { min-height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .nav-bar { display: flex; align-items: center; justify-content: center; height: 52px; background: var(--bg); position: sticky; top: 0; z-index: 50; border-bottom: 0.5px solid var(--separator); }
+    .nav-title { font-size: 1.05rem; font-weight: 600; }
+    .hero { padding: 20px; text-align: center; }
+    .hero-emoji { font-size: 3rem; margin-bottom: 8px; display: block; }
+    .hero h1 { font-family: var(--serif); font-size: 1.65rem; font-weight: 400; }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .section { margin-top: 24px; }
+    .section-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 0 20px; margin-bottom: 6px; }
+    .grouped { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
+    .grouped-row { display: flex; align-items: center; padding: 0 20px; min-height: 52px; }
+    .row-emoji { font-size: 1.4rem; margin-right: 12px; width: 28px; text-align: center; }
+    .row-label { flex: 1; font-size: 1.05rem; font-weight: 500; }
+    .stepper { display: flex;
