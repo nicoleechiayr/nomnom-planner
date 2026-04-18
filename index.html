@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ... (Styles remain the same as previous version) ... */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
       --bg: #FAF8F4; --card: #FFFFFF; --grouped: #F2EFE9; --separator: rgba(0,0,0,0.06);
@@ -18,11 +17,11 @@
     html, body { min-height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
     .nav-bar { display: flex; align-items: center; justify-content: center; height: 52px; background: var(--bg); position: sticky; top: 0; z-index: 50; border-bottom: 0.5px solid var(--separator); }
     .nav-title { font-size: 1.05rem; font-weight: 600; }
-    .hero { padding: 20px; text-align: center; }
-    .hero-emoji { font-size: 3rem; margin-bottom: 8px; display: block; }
-    .hero h1 { font-family: var(--serif); font-size: 1.65rem; font-weight: 400; }
+    .hero { padding: 20px 20px 0 20px; text-align: center; }
+    .hero-emoji { font-size: 2.5rem; margin-bottom: 4px; display: block; }
+    .hero h1 { font-family: var(--serif); font-size: 1.5rem; font-weight: 400; }
     .hero h1 em { font-style: italic; color: var(--accent); }
-    .section { margin-top: 24px; }
+    .section { margin-top: 20px; }
     .section-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 0 20px; margin-bottom: 6px; }
     .grouped { background: var(--card); border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
     .grouped-row { display: flex; align-items: center; padding: 0 20px; min-height: 52px; }
@@ -45,8 +44,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .sheet-bg { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.35); align-items: flex-end; }
     .sheet-bg.show { display: flex; }
-    .sheet { width: 100%; max-height: 85vh; background: var(--card); border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet { width: 100%; max-height: 85vh; background: var(--card); border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; }
     .sheet-body { overflow-y: auto; padding: 20px; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; flex: 1; color: var(--text); }
   </style>
 </head>
@@ -56,8 +54,6 @@
 
 <div style="padding-bottom: 120px;">
   <div class="hero"><span class="hero-emoji">🥗</span><h1>Your <em>Smart</em> Fridge</h1></div>
-
-  <div id="dynamic-inventory"></div>
 
   <div class="section">
     <div class="section-label">Meals Needed</div>
@@ -88,6 +84,8 @@
       </div>
     </div>
   </div>
+
+  <div id="dynamic-inventory"></div>
 
   <div class="section">
     <div class="section-label">Add something new?</div>
@@ -127,16 +125,14 @@
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
     
-    // Custom sort order to ensure Meat & Protein is always first
+    // Explicit sort order: Protein always first
     const categoryOrder = ['Meat & Protein', 'Dairy', 'Produce', 'Dry Goods', 'Snacks', 'Other'];
     const uniqueCats = [...new Set(items.map(i => i.ingredient_category || 'Other'))];
     
     const sortedCats = uniqueCats.sort((a, b) => {
       let ia = categoryOrder.indexOf(a);
       let ib = categoryOrder.indexOf(b);
-      if (ia === -1) ia = 99;
-      if (ib === -1) ib = 99;
-      return ia - ib;
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     });
 
     sortedCats.forEach(cat => {
@@ -173,18 +169,18 @@
       NOTES: ${extras || 'None'}.
 
       STRICT OUTPUT PROTOCOL:
-      1. TOTAL INGREDIENTS: First, list every single ingredient needed for the recipe.
-      2. AUDIT: Compare every ingredient to the INVENTORY list.
-      3. OUTPUT FORMAT PER MEAL:
+      For EVERY meal, follow this EXACT structure:
          
-         ### [Meal Name]
-         **Total Ingredient List:** (List everything needed to make this)
-         **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
-         **✅ IN-STOCK:** (Only items found in the INVENTORY list)
-         **🛒 SHOPPING LIST:** (Items Nicole MUST buy because they aren't in the inventory)
-         **Steps:** (Short instructions)
+      ### [Meal Name]
+      **Total Ingredient List:** (List every single ingredient required for this recipe)
+      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
+      **✅ IN-STOCK:** (Only items found in the INVENTORY list)
+      **🛒 SHOPPING LIST:** (Items Nicole MUST buy because they aren't in the inventory list)
+      **Instructions:** (Short instructions)
 
-      CONSTRAINTS: Min 30g protein, Max 500 calories. Do not assume any "pantry staples" like oil or salt are in stock unless they are in the inventory list.
+      CONSTRAINTS: 
+      - Min 30g protein, Max 500 calories. 
+      - Do not assume "pantry staples" (oil/salt) are in stock unless they are in the inventory list.
     `;
 
     document.getElementById('loader').classList.add('show');
