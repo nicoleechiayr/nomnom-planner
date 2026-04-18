@@ -161,23 +161,29 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's AI Nutritionist. 
-      CURRENT INVENTORY: ${selectedItems.join(', ')}.
-      USER REQUEST: Plan ${counts.breakfast} Breakfast, ${counts.lunch} Lunch, and ${counts.dinner} Dinner.
-      ADDITIONAL PREFERENCES: ${extras}.
+      You are a precise Inventory Auditor and Nutritionist.
+      
+      STEP 1: ANALYZE INVENTORY
+      Nicole ONLY has these items: [${selectedItems.join(', ')}].
+      ASSUME SHE HAS ABSOLUTELY NOTHING ELSE (no oil, no salt, no garlic, no rice) unless it is in that list.
 
-      STRICT MACRO CONSTRAINTS:
-      1. Every meal MUST have at least 30g of protein.
-      2. Every meal MUST be under 500 total calories.
+      STEP 2: PLAN MEALS
+      Plan ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D. 
+      Constraint: Min 30g Protein, Max 500 Calories.
 
-      OUTPUT FORMAT:
-      For each meal, provide:
-      - Meal Name
-      - Macros (Protein, Carbs, Fats, Total Calories)
-      - IN-STOCK: (Ingredients used from the inventory list)
-      - SHOPPING LIST: (Specific ingredients needed that were NOT in the inventory list)
+      STEP 3: COMPARE & OUTPUT
+      For EVERY ingredient in your recipe, check if it exists in the INVENTORY list above.
+      - If YES: Put it in ✅ IN-STOCK.
+      - If NO: Put it in 🛒 SHOPPING LIST.
+
+      FORMAT:
+      ### [Meal Name]
+      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
+      **✅ IN-STOCK:** (Items from the inventory list used here)
+      **🛒 SHOPPING LIST:** (EVERY SINGLE other ingredient required for this recipe)
+      **Instructions:** (2 steps)
     `;
-
+    
     document.getElementById('loader').classList.add('show');
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
