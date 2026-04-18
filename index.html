@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom Planner | Gourmet Prep Architect</title>
+  <title>NomNom Planner | Culinary Architect</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -53,7 +53,7 @@
 <div class="nav-bar"><div class="nav-title">NomNom Planner</div></div>
 
 <div style="padding-bottom: 140px;">
-  <div class="hero"><span class="hero-emoji">👨‍🍳</span><h1>Gourmet <em>Prep Sunday</em></h1></div>
+  <div class="hero"><span class="hero-emoji">🌶️</span><h1>The <em>Creative</em> Prep</h1></div>
 
   <div class="section">
     <div class="section-label">Meals Needed</div>
@@ -88,16 +88,16 @@
   <div id="dynamic-inventory"></div>
 
   <div class="section">
-    <div class="section-label">Add something new?</div>
+    <div class="section-label">Flavor Inspiration?</div>
     <div class="input-section">
-      <textarea id="extras" rows="2" placeholder="e.g. want something spicy, Thai inspired..."></textarea>
+      <textarea id="extras" rows="2" placeholder="e.g. Miso-glazes, spicy Harissa, Thai Basil, anything but plain chicken..."></textarea>
     </div>
   </div>
 </div>
 
-<div class="gen-wrap"><button class="gen-btn" onclick="generate()">✨ Generate Gourmet Prep</button></div>
+<div class="gen-wrap"><button class="gen-btn" onclick="generate()">🧑‍🍳 Generate Chef's Plan</button></div>
 
-<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Crafting global flavors...</div></div>
+<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Banning boring recipes...</div></div>
 
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet"><div class="sheet-body" id="sheetText"></div><button style="padding:15px; border:none; background:var(--grouped); font-weight:600;" onclick="closeSheet()">Close</button></div>
@@ -157,41 +157,40 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's Gourmet Meal Prep Architect. 
+      You are Nicole's Culinary Architect. Your mission is to destroy boring meal prep. 
       INVENTORY: [${selectedItems.join(', ')}]
       PLAN: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
-      NOTES: ${extras || 'None'}.
+      NOTES: ${extras || 'Make it exciting and non-generic.'}.
 
-      STRICT GOURMET PROTOCOL:
-      1. FLAVOR OVER "GYM BRO": Avoid bland chicken and broccoli. Use vibrant global profiles (Thai, Japanese, Mexican, Mediterranean). Think: zests, fresh herbs, aromatics, and acids (vinegars/citrus).
-      2. TEXTURE VARIETY: Include elements that provide crunch or freshness (e.g., quick-pickled onions, toasted seeds, herb oils) that won't go soggy for 5 days.
-      3. MEAL TYPE LABELING: Explicitly label [BREAKFAST] vs [LUNCH/DINNER].
-      4. VARIETY RULE: Provide 2-3 distinct flavor variations across the plan. 
-      5. EFFICIENCY: Utilize a "Common Base" batch-prep strategy (e.g. roast a large quantity of protein but season portions differently).
-      6. FORMAT: Bullets for ingredients (new line each), numbered lists for steps.
+      STRICT CHEF PROTOCOLS:
+      1. BAN THE BASICS: Never suggest plain roasted chicken/broccoli/rice. If using chicken, it must be "Lemongrass Infused," "Chipotle Braised," or "Miso-Glazed."
+      2. UMAMI & ACID: Every meal must have a source of deep flavor (miso, soy, parmesan, nutritional yeast, balsamic, lime, or kimchi).
+      3. TEXTURE KICK: Suggest one "crunch factor" for each meal (e.g. toasted pepitas, quick-pickled radishes, or crispy garlic) that can be stored separately.
+      4. FUSION VARIETY: Ensure the week includes at least two different global flavor profiles (e.g. 1 Mediterranean, 1 Southeast Asian).
+      5. BATCH-COOK MASTERY: Design the prep so 80% of the work is a "Master Base," but the "Final 20%" (sauces/toppings) creates distinct flavor variations.
+      6. FORMATTING: Ingredients on NEW LINES. Instructions in Numbered Steps.
 
       OUTPUT FORMAT:
       
-      ## 🚀 SUNDAY AFTERNOON MASTER WORKFLOW (2-3 Hours)
-      - [Batch prep steps for all flavor variations]
+      ## 🏺 THE SUNDAY PREP STRATEGY (2-3 Hours)
+      - [Batch prep the base protein/grains]
+      - [Whip up the "Flavor Kits" - the sauces/pickles that transform the meals]
 
       ---
       
-      ### [Meal Category] - [Gourmet Meal Name]
+      ### [Meal Category] - [Creative Chef Title]
       **Total Ingredient List:**
-      - [Ingredient 1]
+      - [Item]
       
-      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
+      **Macros:** P: 30g+ | C: XXg | F: XXg | kcal: <500
       **✅ IN-STOCK:** - [Inventory Item]
       **🛒 SHOPPING LIST:** - [Buy this]
-      
-      **Chef's Instructions:** 1. [Step 1]
-      2. [Step 2]
+      **Chef's Assembly:** 1. [Step 1]
       
       ---
-      (Repeat for all variations)
+      (Repeat for variations)
 
-      CONSTRAINTS: Min 30g protein, Max 500 calories per meal. NO assumptions on pantry staples.
+      CONSTRAINTS: Min 30g protein, Max 500 calories. Do not assume pantry staples.
     `;
 
     document.getElementById('loader').classList.add('show');
