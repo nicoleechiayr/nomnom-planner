@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom Planner | Dynamic Fridge</title>
+  <title>NomNom Planner | Grocery Auditor</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* ... (Styles remain the same as previous version) ... */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
       --bg: #FAF8F4; --card: #FFFFFF; --grouped: #F2EFE9; --separator: rgba(0,0,0,0.06);
@@ -56,17 +57,11 @@
 <div style="padding-bottom: 120px;">
   <div class="hero"><span class="hero-emoji">🥗</span><h1>Your <em>Smart</em> Fridge</h1></div>
 
+  <div id="dynamic-inventory"></div>
+
   <div class="section">
     <div class="section-label">Meals Needed</div>
     <div class="grouped">
-      <div class="grouped-row">
-        <div class="row-emoji">☕</div><div class="row-label">Breakfast</div>
-        <div class="stepper">
-          <button class="step-btn" onclick="changeCount('breakfast',-1)">−</button>
-          <div class="step-val" id="cBreakfast">0</div>
-          <button class="step-btn" onclick="changeCount('breakfast',1)">+</button>
-        </div>
-      </div>
       <div class="grouped-row">
         <div class="row-emoji">☀️</div><div class="row-label">Lunch</div>
         <div class="stepper">
@@ -83,10 +78,16 @@
           <button class="step-btn" onclick="changeCount('dinner',1)">+</button>
         </div>
       </div>
+      <div class="grouped-row">
+        <div class="row-emoji">☕</div><div class="row-label">Breakfast</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="changeCount('breakfast',-1)">−</button>
+          <div class="step-val" id="cBreakfast">0</div>
+          <button class="step-btn" onclick="changeCount('breakfast',1)">+</button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div id="dynamic-inventory"></div>
 
   <div class="section">
     <div class="section-label">Add something new?</div>
@@ -118,7 +119,6 @@
   }
 
   async function init() {
-    // Fetch all columns, including ingredient_category
     const { data } = await supabaseClient.from('inventory').select('*');
     if (data) render(data);
   }
@@ -127,12 +127,19 @@
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
     
-    // 1. Identify all unique categories present in the database results
-    const categories = [...new Set(items.map(i => i.ingredient_category || 'Other'))];
+    // Custom sort order to ensure Meat & Protein is always first
+    const categoryOrder = ['Meat & Protein', 'Dairy', 'Produce', 'Dry Goods', 'Snacks', 'Other'];
+    const uniqueCats = [...new Set(items.map(i => i.ingredient_category || 'Other'))];
     
-    // Sort categories so they appear in a consistent order if you like
-    categories.sort().forEach(cat => {
-      // 2. Filter items for this specific category
+    const sortedCats = uniqueCats.sort((a, b) => {
+      let ia = categoryOrder.indexOf(a);
+      let ib = categoryOrder.indexOf(b);
+      if (ia === -1) ia = 99;
+      if (ib === -1) ib = 99;
+      return ia - ib;
+    });
+
+    sortedCats.forEach(cat => {
       const filtered = items.filter(i => (i.ingredient_category || 'Other') === cat);
       if (filtered.length === 0) return;
       
@@ -145,7 +152,6 @@
         const div = document.createElement('div');
         div.className = 'chip';
         div.textContent = f.item_name;
-        // Allows user to select/deselect for AI generation
         div.onclick = () => div.classList.toggle('selected');
         chips.appendChild(div);
       });
@@ -161,30 +167,26 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      USER CONTEXT:
-      - NICOLE'S INVENTORY: [${selectedItems.join(', ')}]
-      - REQUEST: Plan ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
-      - PREFERENCES: ${extras || 'None'}.
+      You are Nicole's Nutrition Auditor. 
+      INVENTORY: [${selectedItems.join(', ')}]
+      PLAN: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      NOTES: ${extras || 'None'}.
 
-      YOUR GOAL:
-      Act as a Creative Chef + Strict Inventory Auditor. 
-      1. Feel free to suggest spices, grains, or veggies NOT in the inventory to make the meals delicious and meet the macros.
-      2. BUT, you must strictly categorize every ingredient:
-         - If it is in the [NICOLE'S INVENTORY] list -> Put in "✅ IN-STOCK".
-         - If it is NOT in that list -> Put in "🛒 SHOPPING LIST".
+      STRICT OUTPUT PROTOCOL:
+      1. TOTAL INGREDIENTS: First, list every single ingredient needed for the recipe.
+      2. AUDIT: Compare every ingredient to the INVENTORY list.
+      3. OUTPUT FORMAT PER MEAL:
+         
+         ### [Meal Name]
+         **Total Ingredient List:** (List everything needed to make this)
+         **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
+         **✅ IN-STOCK:** (Only items found in the INVENTORY list)
+         **🛒 SHOPPING LIST:** (Items Nicole MUST buy because they aren't in the inventory)
+         **Steps:** (Short instructions)
 
-      CONSTRAINTS:
-      - Protein >= 30g per meal.
-      - Calories < 500 per meal.
-
-      OUTPUT FORMAT:
-      ### [Meal Name]
-      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
-      **✅ IN-STOCK:** (Items used from inventory)
-      **🛒 SHOPPING LIST:** (Items Nicole needs to buy for this recipe)
-      **Steps:** (1-2 sentences)
+      CONSTRAINTS: Min 30g protein, Max 500 calories. Do not assume any "pantry staples" like oil or salt are in stock unless they are in the inventory list.
     `;
-    
+
     document.getElementById('loader').classList.add('show');
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
@@ -193,12 +195,11 @@
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const data = await res.json();
-      
-      const responseText = data.content ? data.content[0].text : (data.choices ? data.choices[0].message.content : "No response from AI.");
+      const responseText = data.content ? data.content[0].text : (data.choices ? data.choices[0].message.content : "No response.");
       document.getElementById('sheetText').textContent = responseText;
       document.getElementById('sheetBg').classList.add('show');
     } catch (e) {
-      alert("Connectivity issue. Please check your network.");
+      alert("Error reaching AI.");
     } finally {
       document.getElementById('loader').classList.remove('show');
     }
