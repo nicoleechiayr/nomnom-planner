@@ -162,20 +162,26 @@
     
     const prompt = `
       USER CONTEXT:
-      - INVENTORY (The ONLY items Nicole has): [${selectedItems.join(', ')}]
+      - NICOLE'S INVENTORY: [${selectedItems.join(', ')}]
       - REQUEST: Plan ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
       - PREFERENCES: ${extras || 'None'}.
 
-      STRICT PROTOCOL:
-      1. COMPONENT AUDIT: For every recipe, you must check every single ingredient (including spices, oils, and liquids) against the INVENTORY list.
-      2. SHOPPING LIST LOGIC: If an ingredient is NOT explicitly written in the INVENTORY list above, it MUST be moved to the "🛒 SHOPPING LIST" section. No exceptions for "pantry staples."
-      3. MACROS: Protein >= 30g, Calories < 500.
+      YOUR GOAL:
+      Act as a Creative Chef + Strict Inventory Auditor. 
+      1. Feel free to suggest spices, grains, or veggies NOT in the inventory to make the meals delicious and meet the macros.
+      2. BUT, you must strictly categorize every ingredient:
+         - If it is in the [NICOLE'S INVENTORY] list -> Put in "✅ IN-STOCK".
+         - If it is NOT in that list -> Put in "🛒 SHOPPING LIST".
+
+      CONSTRAINTS:
+      - Protein >= 30g per meal.
+      - Calories < 500 per meal.
 
       OUTPUT FORMAT:
       ### [Meal Name]
       **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
-      **✅ IN-STOCK:** (Only items from the inventory list)
-      **🛒 SHOPPING LIST:** (Everything else required to make this meal)
+      **✅ IN-STOCK:** (Items used from inventory)
+      **🛒 SHOPPING LIST:** (Items Nicole needs to buy for this recipe)
       **Steps:** (1-2 sentences)
     `;
     
