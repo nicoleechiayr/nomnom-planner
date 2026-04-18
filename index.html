@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom Planner | Meal Prep Architect</title>
+  <title>NomNom Planner | Gourmet Prep Architect</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -53,7 +53,7 @@
 <div class="nav-bar"><div class="nav-title">NomNom Planner</div></div>
 
 <div style="padding-bottom: 140px;">
-  <div class="hero"><span class="hero-emoji">🍱</span><h1>Variety <em>Meal Prep</em></h1></div>
+  <div class="hero"><span class="hero-emoji">👨‍🍳</span><h1>Gourmet <em>Prep Sunday</em></h1></div>
 
   <div class="section">
     <div class="section-label">Meals Needed</div>
@@ -90,14 +90,14 @@
   <div class="section">
     <div class="section-label">Add something new?</div>
     <div class="input-section">
-      <textarea id="extras" rows="2" placeholder="e.g. want to buy salmon, use up kimchi..."></textarea>
+      <textarea id="extras" rows="2" placeholder="e.g. want something spicy, Thai inspired..."></textarea>
     </div>
   </div>
 </div>
 
-<div class="gen-wrap"><button class="gen-btn" onclick="generate()">⚡ Generate Variety Prep</button></div>
+<div class="gen-wrap"><button class="gen-btn" onclick="generate()">✨ Generate Gourmet Prep</button></div>
 
-<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Architecting your prep...</div></div>
+<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Crafting global flavors...</div></div>
 
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet"><div class="sheet-body" id="sheetText"></div><button style="padding:15px; border:none; background:var(--grouped); font-weight:600;" onclick="closeSheet()">Close</button></div>
@@ -157,41 +157,41 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's Meal Prep Architect. 
+      You are Nicole's Gourmet Meal Prep Architect. 
       INVENTORY: [${selectedItems.join(', ')}]
       PLAN: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
       NOTES: ${extras || 'None'}.
 
-      STRICT MEAL PREP PROTOCOL:
-      1. MEAL TYPE LABELING: Explicitly title meals as [BREAKFAST] or [LUNCH/DINNER]. Note that L/D are full-sized, while Breakfast focuses on morning protein staples.
-      2. VARIETY RULE: Provide 2-3 different flavor variations for each meal category. Monday shouldn't taste like Friday.
-      3. EFFICIENCY: Use a "Common Base" (batch-cooked proteins/grains) that can be flavored differently. Total Sunday prep must fit in a 2-3 hour window.
-      4. LONGEVITY: Use sturdy, high-fiber veggies that last 5 days in the fridge without getting soggy.
-      5. FORMAT: All ingredient lists must be bulleted with each item on a NEW LINE. All instructions must be numbered Step 1, Step 2, etc.
+      STRICT GOURMET PROTOCOL:
+      1. FLAVOR OVER "GYM BRO": Avoid bland chicken and broccoli. Use vibrant global profiles (Thai, Japanese, Mexican, Mediterranean). Think: zests, fresh herbs, aromatics, and acids (vinegars/citrus).
+      2. TEXTURE VARIETY: Include elements that provide crunch or freshness (e.g., quick-pickled onions, toasted seeds, herb oils) that won't go soggy for 5 days.
+      3. MEAL TYPE LABELING: Explicitly label [BREAKFAST] vs [LUNCH/DINNER].
+      4. VARIETY RULE: Provide 2-3 distinct flavor variations across the plan. 
+      5. EFFICIENCY: Utilize a "Common Base" batch-prep strategy (e.g. roast a large quantity of protein but season portions differently).
+      6. FORMAT: Bullets for ingredients (new line each), numbered lists for steps.
 
       OUTPUT FORMAT:
       
       ## 🚀 SUNDAY AFTERNOON MASTER WORKFLOW (2-3 Hours)
-      - [Time-saving batch prep steps for all meals simultaneously]
+      - [Batch prep steps for all flavor variations]
 
       ---
       
-      ### [Meal Category] - [Meal Name]
+      ### [Meal Category] - [Gourmet Meal Name]
       **Total Ingredient List:**
       - [Ingredient 1]
-      - [Ingredient 2]
       
       **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
-      **✅ IN-STOCK:** - [Item from inventory]
-      **🛒 SHOPPING LIST:** - [Item Nicole MUST buy]
+      **✅ IN-STOCK:** - [Inventory Item]
+      **🛒 SHOPPING LIST:** - [Buy this]
       
-      **Preparation Instructions:** 1. [Step 1]
+      **Chef's Instructions:** 1. [Step 1]
       2. [Step 2]
       
       ---
-      (Repeat for all requested meals and variations)
+      (Repeat for all variations)
 
-      CONSTRAINTS: Min 30g protein, Max 500 calories per meal. Do not assume pantry staples (oil/salt) are in stock unless listed in inventory.
+      CONSTRAINTS: Min 30g protein, Max 500 calories per meal. NO assumptions on pantry staples.
     `;
 
     document.getElementById('loader').classList.add('show');
