@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <meta name="theme-color" content="#FAF8F4"/>
-  <title>NomNom Planner | Smart Fridge</title>
+  <title>NomNom Planner | Dynamic Fridge</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -49,7 +46,7 @@
     .sheet-bg.show { display: flex; }
     .sheet { width: 100%; max-height: 85vh; background: var(--card); border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .sheet-body { overflow-y: auto; padding: 20px; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; flex: 1; }
+    .sheet-body { overflow-y: auto; padding: 20px; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; flex: 1; color: var(--text); }
   </style>
 </head>
 <body>
@@ -120,16 +117,8 @@
     document.getElementById(id).textContent = counts[t];
   }
 
-  function getCategory(name) {
-    const n = name.toLowerCase();
-    if (/chicken|salmon|beef|meat|tofu|egg|protein|tuna|prawn|fish|turkey|seafood|pork|lamb|tempeh/.test(n)) return 'Meat & Protein';
-    if (/milk|cheese|yogurt|butter|cream|dairy|curd/.test(n)) return 'Dairy';
-    if (/asparagus|tomato|pepper|kimchi|spinach|onion|broccoli|carrot|cucumber|kale|cabbage|lettuce/.test(n)) return 'Produce';
-    if (/pasta|rice|oats|flour|bread|grain|noodle|quinoa|cereal|bean|lentil/.test(n)) return 'Dry Goods';
-    return 'Snacks';
-  }
-
   async function init() {
+    // Fetch all columns, including ingredient_category
     const { data } = await supabaseClient.from('inventory').select('*');
     if (data) render(data);
   }
@@ -137,22 +126,26 @@
   function render(items) {
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
-    const cats = ['Meat & Protein', 'Dairy', 'Produce', 'Dry Goods', 'Snacks'];
     
-    cats.forEach(c => {
-      const filtered = items.filter(i => getCategory(i.item_name) === c);
+    // 1. Identify all unique categories present in the database results
+    const categories = [...new Set(items.map(i => i.ingredient_category || 'Other'))];
+    
+    // Sort categories so they appear in a consistent order if you like
+    categories.sort().forEach(cat => {
+      // 2. Filter items for this specific category
+      const filtered = items.filter(i => (i.ingredient_category || 'Other') === cat);
       if (filtered.length === 0) return;
       
       const section = document.createElement('div');
       section.className = 'section';
-      section.innerHTML = `<div class="section-label">${c}</div><div class="chip-section"><div class="chips"></div></div>`;
+      section.innerHTML = `<div class="section-label">${cat}</div><div class="chip-section"><div class="chips"></div></div>`;
       
       const chips = section.querySelector('.chips');
       filtered.forEach(f => {
         const div = document.createElement('div');
-        // REMOVED 'selected' class here to prevent auto-select on load
-        div.className = 'chip'; 
+        div.className = 'chip';
         div.textContent = f.item_name;
+        // Allows user to select/deselect for AI generation
         div.onclick = () => div.classList.toggle('selected');
         chips.appendChild(div);
       });
@@ -167,9 +160,23 @@
     const selectedItems = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.textContent);
     const extras = document.getElementById('extras').value;
     
-    const prompt = `Nicole has: ${selectedItems.join(', ')}. Extras/Preferences: ${extras}. 
-    Plan ${total} meals: ${counts.breakfast} Breakfast, ${counts.lunch} Lunch, ${counts.dinner} Dinner. 
-    Macros: High protein, low fat. List macros clearly for each suggestion.`;
+    const prompt = `
+      You are Nicole's AI Nutritionist. 
+      CURRENT INVENTORY: ${selectedItems.join(', ')}.
+      USER REQUEST: Plan ${counts.breakfast} Breakfast, ${counts.lunch} Lunch, and ${counts.dinner} Dinner.
+      ADDITIONAL PREFERENCES: ${extras}.
+
+      STRICT MACRO CONSTRAINTS:
+      1. Every meal MUST have at least 30g of protein.
+      2. Every meal MUST be under 500 total calories.
+
+      OUTPUT FORMAT:
+      For each meal, provide:
+      - Meal Name
+      - Macros (Protein, Carbs, Fats, Total Calories)
+      - IN-STOCK: (Ingredients used from the inventory list)
+      - SHOPPING LIST: (Specific ingredients needed that were NOT in the inventory list)
+    `;
 
     document.getElementById('loader').classList.add('show');
     try {
@@ -179,7 +186,9 @@
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const data = await res.json();
-      document.getElementById('sheetText').textContent = data.content[0].text;
+      
+      const responseText = data.content ? data.content[0].text : (data.choices ? data.choices[0].message.content : "No response from AI.");
+      document.getElementById('sheetText').textContent = responseText;
       document.getElementById('sheetBg').classList.add('show');
     } catch (e) {
       alert("Connectivity issue. Please check your network.");
