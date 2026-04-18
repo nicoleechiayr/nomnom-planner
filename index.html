@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom Planner | Grocery Auditor</title>
+  <title>NomNom Planner | Meal Prep Auditor</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -53,7 +53,7 @@
 <div class="nav-bar"><div class="nav-title">NomNom Planner</div></div>
 
 <div style="padding-bottom: 120px;">
-  <div class="hero"><span class="hero-emoji">🥗</span><h1>Your <em>Smart</em> Fridge</h1></div>
+  <div class="hero"><span class="hero-emoji">🥘</span><h1>Meal Prep <em>Sunday</em></h1></div>
 
   <div class="section">
     <div class="section-label">Meals Needed</div>
@@ -90,14 +90,14 @@
   <div class="section">
     <div class="section-label">Add something new?</div>
     <div class="input-section">
-      <textarea id="extras" rows="2" placeholder="e.g. want to buy salmon, need to use up kimchi..."></textarea>
+      <textarea id="extras" rows="2" placeholder="e.g. want to buy salmon, use up kimchi..."></textarea>
     </div>
   </div>
 </div>
 
-<div class="gen-wrap"><button class="gen-btn" onclick="generate()">🍽️ Generate Plan</button></div>
+<div class="gen-wrap"><button class="gen-btn" onclick="generate()">🗓️ Plan Prep Sunday</button></div>
 
-<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Consulting the Chef...</div></div>
+<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Architecting your prep...</div></div>
 
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet"><div class="sheet-body" id="sheetText"></div><button style="padding:15px; border:none; background:var(--grouped); font-weight:600;" onclick="closeSheet()">Close</button></div>
@@ -124,11 +124,8 @@
   function render(items) {
     const container = document.getElementById('dynamic-inventory');
     container.innerHTML = '';
-    
-    // Explicit sort order: Protein always first
     const categoryOrder = ['Meat & Protein', 'Dairy', 'Produce', 'Dry Goods', 'Snacks', 'Other'];
     const uniqueCats = [...new Set(items.map(i => i.ingredient_category || 'Other'))];
-    
     const sortedCats = uniqueCats.sort((a, b) => {
       let ia = categoryOrder.indexOf(a);
       let ib = categoryOrder.indexOf(b);
@@ -138,11 +135,9 @@
     sortedCats.forEach(cat => {
       const filtered = items.filter(i => (i.ingredient_category || 'Other') === cat);
       if (filtered.length === 0) return;
-      
       const section = document.createElement('div');
       section.className = 'section';
       section.innerHTML = `<div class="section-label">${cat}</div><div class="chip-section"><div class="chips"></div></div>`;
-      
       const chips = section.querySelector('.chips');
       filtered.forEach(f => {
         const div = document.createElement('div');
@@ -158,29 +153,47 @@
   async function generate() {
     const total = counts.breakfast + counts.lunch + counts.dinner;
     if (total === 0) return alert("Select at least 1 meal!");
-    
     const selectedItems = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.textContent);
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's Nutrition Auditor. 
+      You are Nicole's Meal Prep Architect. 
       INVENTORY: [${selectedItems.join(', ')}]
       PLAN: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
       NOTES: ${extras || 'None'}.
 
-      STRICT OUTPUT PROTOCOL:
-      For EVERY meal, follow this EXACT structure:
-         
-      ### [Meal Name]
-      **Total Ingredient List:** (List every single ingredient required for this recipe)
-      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
-      **✅ IN-STOCK:** (Only items found in the INVENTORY list)
-      **🛒 SHOPPING LIST:** (Items Nicole MUST buy because they aren't in the inventory list)
-      **Instructions:** (Short instructions)
+      STRICT MEAL PREP PROTOCOL:
+      1. EFFICIENCY: Recipes must be batch-cook friendly (e.g., sheet pan, slow cooker, or big pot).
+      2. LONGEVITY: Ingredients must stay fresh and tasty for up to 5 days in the fridge. Avoid ingredients that go soggy (e.g., delicate greens in dressing).
+      3. SUNDAY WORKFLOW: Provide a "Sunday Afternoon Master Workflow" (2-3 hours) showing how to cook all these meals simultaneously.
+      4. LIST FORMATTING: Bullets for ingredients, each on a NEW LINE.
+      5. VEGGIES: Include high-fiber, sturdy vegetables (broccoli, carrots, peppers, kale) in every meal.
 
-      CONSTRAINTS: 
-      - Min 30g protein, Max 500 calories. 
-      - Do not assume "pantry staples" (oil/salt) are in stock unless they are in the inventory list.
+      OUTPUT FORMAT:
+      
+      ## 🚀 SUNDAY AFTERNOON WORKFLOW (2-3 Hours)
+      - [Time-saving step 1: e.g. Preheat oven and chop all veggies]
+      - [Step 2: e.g. Start grains and roast proteins]
+      - [Step 3: e.g. Portion out containers]
+
+      ---
+      
+      ### [Meal Name]
+      **Total Ingredient List:**
+      - [Ingredient 1]
+      - [Ingredient 2]
+      
+      **Macros:** P: XXg | C: XXg | F: XXg | kcal: XXX
+      
+      **✅ IN-STOCK:** - [Inventory Item]
+      
+      **🛒 SHOPPING LIST:** - [Buy this]
+      
+      **Preparation Instructions:** 1. [Step 1]
+      2. [Step 2]
+      3. [Step 3]
+
+      CONSTRAINTS: Min 30g protein, Max 500 calories. 
     `;
 
     document.getElementById('loader').classList.add('show');
