@@ -70,6 +70,7 @@
     .recipe-card {
       background: var(--accent-light); border-radius: 16px; padding: 16px;
       margin-bottom: 16px; position: relative; border: 1px solid var(--border);
+      text-align: left;
     }
     .save-btn {
       position: absolute; top: 16px; right: 16px;
@@ -206,25 +207,17 @@
       const d = await res.json();
       renderRecipes(d.content[0].text);
       document.getElementById('overlay').style.display = 'flex';
-    } catch(e) { alert("API Error."); }
-    document.getElementById('loader').style.display = 'none';
-  }
-    try {
-      const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      const d = await res.json();
-      renderRecipes(d.content[0].text);
-      document.getElementById('overlay').style.display = 'flex';
-    } catch(e) { alert("API Error."); }
+    } catch(e) { 
+      console.error(e);
+      alert("API Error."); 
+    }
     document.getElementById('loader').style.display = 'none';
   }
 
   function renderRecipes(text) {
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
+    // Split by our marker and filter out empty strings
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
     
     recipes.forEach((recipeText, index) => {
