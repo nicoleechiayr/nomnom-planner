@@ -90,14 +90,14 @@
   <div class="section">
     <div class="section-label">Flavor Inspiration?</div>
     <div class="input-section">
-      <textarea id="extras" rows="2" placeholder="e.g. Miso-glazes, spicy Harissa, Thai Basil, anything but plain chicken..."></textarea>
+      <textarea id="extras" rows="2" placeholder="e.g. Miso-glazes, spicy Harissa, Thai Basil..."></textarea>
     </div>
   </div>
 </div>
 
 <div class="gen-wrap"><button class="gen-btn" onclick="generate()">🧑‍🍳 Generate Chef's Plan</button></div>
 
-<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Banning boring recipes...</div></div>
+<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Analyzing Inventory...</div></div>
 
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet"><div class="sheet-body" id="sheetText"></div><button style="padding:15px; border:none; background:var(--grouped); font-weight:600;" onclick="closeSheet()">Close</button></div>
@@ -157,40 +157,42 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's Culinary Architect. Your mission is to destroy boring meal prep. 
-      INVENTORY: [${selectedItems.join(', ')}]
+      You are Nicole's Culinary Architect. 
+      USER SELECTED INVENTORY: [${selectedItems.join(', ')}]
       PLAN: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
-      NOTES: ${extras || 'Make it exciting and non-generic.'}.
+      NOTES: ${extras || 'Make it exciting.'}.
 
-      STRICT CHEF PROTOCOLS:
-      1. BAN THE BASICS: Never suggest plain roasted chicken/broccoli/rice. If using chicken, it must be "Lemongrass Infused," "Chipotle Braised," or "Miso-Glazed."
-      2. UMAMI & ACID: Every meal must have a source of deep flavor (miso, soy, parmesan, nutritional yeast, balsamic, lime, or kimchi).
-      3. TEXTURE KICK: Suggest one "crunch factor" for each meal (e.g. toasted pepitas, quick-pickled radishes, or crispy garlic) that can be stored separately.
-      4. FUSION VARIETY: Ensure the week includes at least two different global flavor profiles (e.g. 1 Mediterranean, 1 Southeast Asian).
-      5. BATCH-COOK MASTERY: Design the prep so 80% of the work is a "Master Base," but the "Final 20%" (sauces/toppings) creates distinct flavor variations.
-      6. FORMATTING: Ingredients on NEW LINES. Instructions in Numbered Steps.
+      STRICT AUDIT PROTOCOLS:
+      1. CRITICAL INVENTORY SYNC: Before writing, cross-reference your recipe requirements against the USER SELECTED INVENTORY list. 
+         - If an ingredient is in that list (e.g., "Eggs"), it MUST be listed under "✅ IN-STOCK". 
+         - DO NOT list items as "🛒 SHOPPING LIST" if the user has already selected them. 
+         - BE METICULOUS. If the user clicked it, they have it.
+      2. LOGICAL SERVING SIZES: This is for ONE person. Use common sense for protein volume. DO NOT suggest "6 eggs" for one meal. Max 2-3 eggs; supplement the rest of the protein with lean meats, Greek yogurt, or powders to hit the 30g+ target without excessive volume.
+      3. GOURMET VARIETY: Banish boring "gym bro" meals. Use bold flavor profiles (e.g., Miso, Harissa, Lemongrass). 
+      4. MEAL LABELS: Label clearly as [BREAKFAST], [LUNCH], or [DINNER].
+      5. BATCH-COOK MASTERY: Design for Sunday prep (2-3 hours) with 5-day fridge longevity.
 
       OUTPUT FORMAT:
       
-      ## 🏺 THE SUNDAY PREP STRATEGY (2-3 Hours)
-      - [Batch prep the base protein/grains]
-      - [Whip up the "Flavor Kits" - the sauces/pickles that transform the meals]
+      ## 🏺 THE SUNDAY PREP STRATEGY
+      - [Batch prep steps]
 
       ---
       
       ### [Meal Category] - [Creative Chef Title]
       **Total Ingredient List:**
-      - [Item]
+      - [Ingredient 1]
       
       **Macros:** P: 30g+ | C: XXg | F: XXg | kcal: <500
-      **✅ IN-STOCK:** - [Inventory Item]
-      **🛒 SHOPPING LIST:** - [Buy this]
+      **✅ IN-STOCK:** - [ONLY items present in the User Selected Inventory list]
+      **🛒 SHOPPING LIST:** - [Items NOT in the inventory list]
+      
       **Chef's Assembly:** 1. [Step 1]
       
       ---
       (Repeat for variations)
 
-      CONSTRAINTS: Min 30g protein, Max 500 calories. Do not assume pantry staples.
+      CONSTRAINTS: Single serving logic. Min 30g protein. Max 500 calories.
     `;
 
     document.getElementById('loader').classList.add('show');
