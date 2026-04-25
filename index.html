@@ -70,7 +70,6 @@
     .recipe-card {
       background: var(--accent-light); border-radius: 16px; padding: 16px;
       margin-bottom: 16px; position: relative; border: 1px solid var(--border);
-      text-align: left;
     }
     .save-btn {
       position: absolute; top: 16px; right: 16px;
@@ -95,6 +94,7 @@
     <div class="meal-row"><div><strong>Breakfast</strong></div><div class="stepper"><button class="step-btn" onclick="adj('breakfast',-1)">-</button><span class="step-val" id="v-breakfast">0</span><button class="step-btn" onclick="adj('breakfast',1)">+</button></div></div>
     <div class="meal-row"><div><strong>Lunch</strong></div><div class="stepper"><button class="step-btn" onclick="adj('lunch',-1)">-</button><span class="step-val" id="v-lunch">0</span><button class="step-btn" onclick="adj('lunch',1)">+</button></div></div>
     <div class="meal-row"><div><strong>Dinner</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dinner',-1)">-</button><span class="step-val" id="v-dinner">0</span><button class="step-btn" onclick="adj('dinner',1)">+</button></div></div>
+    <div class="meal-row"><div><strong>Dessert</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dessert',-1)">-</button><span class="step-val" id="v-dessert">0</span><button class="step-btn" onclick="adj('dessert',1)">+</button></div></div>
   </div>
 
   <div id="pantry-mount"></div>
@@ -124,13 +124,13 @@
   const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
   const client = supabase.createClient(S_URL, S_KEY);
 
-  let counts = { breakfast:0, lunch:0, dinner:0 };
+  let counts = { breakfast:0, lunch:0, dinner:0, dessert:0 };
   let masterPantry = [];
 
   function adj(t, d) {
     counts[t] = Math.max(0, counts[t] + d);
     document.getElementById(`v-${t}`).innerText = counts[t];
-    document.getElementById('tot').innerText = counts.breakfast + counts.lunch + counts.dinner;
+    document.getElementById('tot').innerText = Object.values(counts).reduce((a, b) => a + b, 0);
   }
 
   async function init() {
@@ -159,7 +159,7 @@
 
   async function generate() {
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText.split(' (')[0]);
-    const totalCount = counts.breakfast + counts.lunch + counts.dinner;
+    const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
     if (totalCount === 0) return alert("Select meal counts first.");
     
     document.getElementById('loader').style.display = 'flex';
@@ -169,33 +169,30 @@
       System: Strategic Meal Prep Architect (Singapore/Metric).
       
       CORE STRATEGY:
-      1. BATCH PREP FOCUS: Instead of unique recipes for every single slot, design 1 or 2 "Hero Recipes" that can be scaled. For example, if the user wants 4 lunches, suggest ONE high-quality recipe designed for 2 or 4 portions.
-      2. CULINARY BALANCE: Use the selected ingredients [${sel.join(', ')}] as the primary anchor, but combine them with 2-3 "Market Trip" items to create a cohesive, professional-grade dish (e.g., instead of just 'Salmon and Cottage Cheese', suggest a 'Miso-Glazed Salmon with Herbed Cottage Cheese Gnocchi').
-      3. LOGICAL QUANTITY: If the user has 300g salmon, do not spread it across 4 meals. Use it for 2 substantial 150g portions.
-      4. TRUTH IN INGREDIENTS: Check the inventory. "Fillet" = Raw. Match cooking times (e.g. 8-10 mins for salmon fillet) exactly.
+      1. BATCH PREP FOCUS: Design 1 "Hero Recipe" per meal type (B, L, D, Dessert) that scales.
+      2. SAVORY MANDATE: Lunch and Dinner must ALWAYS be savory, substantial main courses.
+      3. SWEET EXCEPTION: Only use dessert slots for sweets/mousses/treats.
+      4. CULINARY BALANCE: Use the selections [${sel.join(', ')}] as anchors. If an item like "Dark Chocolate" is selected but no Dessert is requested, ignore it or use it as a subtle savory garnish (e.g., mole).
+      5. TRUTH IN INGREDIENTS: "Fillet" = Raw. Match cooking times exactly.
       
       CONTEXT:
       - Inventory: [${pantryContext}]
       - Priority Selections: [${sel.join(', ')}]
-      - Total Prep Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      - Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert portions.
       - Flavor Notes: ${document.getElementById('notes').value || 'Creative & Gourmet'}
 
-      OUTPUT FORMAT:
+      OUTPUT FORMAT (Always start each new recipe with [RECIPE]):
       [RECIPE]
       ## [Meal Type] Batch: [Recipe Title] (Serves X)
-      *Chef's Note: Why this dish stays delicious even after 2-3 days in the fridge.*
-      
+      *Chef's Note: Quality/Shelf-life context.*
       - **Macros (Per Serving):** [Metric P/C/F/kcal]
-      
       ### 📋 Ingredients List (Total for the Batch)
-      [Consolidated metric quantities for all portions]
-      
+      [Metric quantities]
       ### 🔍 Inventory Audit
-      - **✅ FROM YOUR FRIDGE:** [Items/qty used from inventory]
-      - **🛒 MARKET TRIP:** [Specific items needed to make this a 5-star prep dish]
-      
+      - **✅ FROM YOUR FRIDGE:** [Items used]
+      - **🛒 MARKET TRIP:** [Additions]
       ### 🔪 Batch Prep Instructions
-      [Efficient steps to cook all portions at once]
+      [Technical steps]
     `;
 
     try {
@@ -217,18 +214,17 @@
   function renderRecipes(text) {
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
-    // Split by our marker and filter out empty strings
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
     
     recipes.forEach((recipeText, index) => {
-      const firstLine = recipeText.trim().split('\n')[0];
-      const mealName = firstLine.replace('##', '').trim();
+      const lines = recipeText.trim().split('\n');
+      const mealName = lines[0].replace('##', '').trim();
       
       const div = document.createElement('div');
       div.className = 'recipe-card';
       div.innerHTML = `
         <button class="save-btn" id="save-${index}" onclick="saveToHistory('${index}', \`${recipeText.replace(/`/g, '\\`')}\`, '${mealName}')">Save</button>
-        <div style="white-space: pre-wrap; font-size: 0.9rem;">${recipeText.trim()}</div>
+        <div style="white-space: pre-wrap; font-size: 0.9rem; text-align: left;">${recipeText.trim()}</div>
       `;
       container.appendChild(div);
     });
@@ -246,8 +242,8 @@
       btn.classList.add('saved');
       btn.disabled = true;
     } else {
-      console.error(error);
-      alert("Error saving recipe.");
+      console.error("Save failed:", error);
+      alert(`Save failed: ${error.message}. Ensure you ran the SQL Policies!`);
     }
   }
 
