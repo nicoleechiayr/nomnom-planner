@@ -3,175 +3,199 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom | Glass Edition</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <title>NomNom | Homey Kitchen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --glass: rgba(255, 255, 255, 0.15);
-      --glass-border: rgba(255, 255, 255, 0.3);
-      --text: #ffffff;
-      --text-dim: rgba(255, 255, 255, 0.7);
-      --accent: #FFD700; /* Gold accent for interactive bits */
+      --bg: #FDFCF8; /* Warm paper color */
+      --card: #FFFFFF;
+      --accent: #6B8E6B; /* Soft Sage */
+      --accent-light: #F0F4F0;
+      --text: #434343;
+      --text-light: #8C8C8C;
+      --border: #E8E4D9;
+      --serif: 'Playfair Display', serif;
+      --sans: 'Quicksand', sans-serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     
     body { 
-      background: linear-gradient(135deg, #4A7C59 0%, #2D5C3E 50%, #1A3C2A 100%);
-      background-attachment: fixed;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: var(--sans); 
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
 
     /* HEADER */
     .header {
-      padding: 40px 24px;
+      padding: 40px 24px 20px;
       text-align: center;
     }
     .header h1 {
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      font-size: 2rem;
+      font-family: var(--serif);
+      font-size: 2.2rem;
+      color: var(--accent);
+      font-style: italic;
     }
-    .header p { color: var(--text-dim); font-size: 0.9rem; margin-top: 5px; }
+    .header p { color: var(--text-light); font-size: 0.95rem; margin-top: 5px; }
 
-    /* GLASS CARD CONTAINER */
-    .container { padding: 0 20px 120px; }
+    /* CONTAINERS */
+    .wrap { padding: 0 16px 140px; max-width: 500px; margin: 0 auto; }
 
-    .glass-card {
-      background: var(--glass);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border);
+    .card {
+      background: var(--card);
       border-radius: 24px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(107, 142, 107, 0.05);
     }
 
-    /* COUNTERS */
-    .counter-grid { display: flex; justify-content: space-between; gap: 10px; }
-    .counter-box { flex: 1; text-align: center; }
-    .count-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--text-dim); }
-    .count-controls { display: flex; align-items: center; justify-content: center; margin-top: 10px; }
-    .count-btn {
-      width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--glass-border);
-      background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; font-size: 1.2rem;
+    /* MEAL STEPS */
+    .meal-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--accent-light);
     }
-    .count-val { width: 30px; font-size: 1.2rem; font-weight: 600; }
-
-    /* CHIPS */
-    .section-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; color: var(--text-dim); }
-    .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--glass-border);
-      padding: 8px 14px;
+    .meal-row:last-child { border-bottom: none; }
+    .label-group { display: flex; align-items: center; gap: 12px; }
+    .emoji { font-size: 1.4rem; }
+    
+    .stepper {
+      display: flex;
+      align-items: center;
+      background: var(--accent-light);
       border-radius: 12px;
+      padding: 4px;
+    }
+    .step-btn {
+      width: 32px; height: 32px; border: none; background: #fff;
+      border-radius: 8px; color: var(--accent); font-weight: bold;
+      cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .step-val { width: 34px; text-align: center; font-weight: 600; color: var(--accent); }
+
+    /* PANTRY CHIPS */
+    .section-title {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    .chip-flex { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 8px 16px;
+      border-radius: 100px;
+      background: #fff;
+      border: 1.5px solid var(--border);
       font-size: 0.85rem;
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: 0.2s;
     }
     .chip.selected {
       background: var(--accent);
-      color: #000;
+      color: #fff;
       border-color: var(--accent);
-      font-weight: 600;
-      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(107, 142, 107, 0.2);
     }
 
-    /* INPUT */
+    /* NOTES */
     textarea {
-      width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border);
-      border-radius: 12px; padding: 12px; color: #fff; font-family: inherit; outline: none;
+      width: 100%; border: 1.5px solid var(--border); border-radius: 16px;
+      padding: 12px; font-family: inherit; font-size: 0.9rem; outline: none;
+      background: var(--accent-light);
     }
 
-    /* ACTION BAR */
-    .action-bar {
-      position: fixed; bottom: 20px; left: 20px; right: 20px;
-      background: rgba(255,255,255,0.2); backdrop-filter: blur(25px);
-      border: 1px solid var(--glass-border); border-radius: 20px;
-      padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+    /* FLOATING BOTTOM BAR */
+    .bottom-bar {
+      position: fixed; bottom: 24px; left: 16px; right: 16px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 16px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
-    .gen-btn {
-      background: #fff; color: #1A3C2A; border: none; padding: 12px 24px;
-      border-radius: 14px; font-weight: 600; cursor: pointer;
+    .go-btn {
+      background: var(--accent); color: #fff; border: none;
+      padding: 14px 28px; border-radius: 14px; font-weight: 600;
+      font-size: 0.95rem; cursor: pointer;
     }
 
     /* MODAL */
-    .modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-      z-index: 1000; backdrop-filter: blur(10px); padding: 40px 20px;
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+      z-index: 1000; padding: 20px; align-items: flex-end;
     }
-    .modal-body {
-      background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
-      border-radius: 30px; height: 100%; overflow-y: auto; padding: 30px; color: #fff;
+    .modal {
+      background: #fff; border-radius: 28px; width: 100%; max-height: 80vh;
+      padding: 30px; overflow-y: auto;
     }
 
     .loader {
       display: none; position: fixed; inset: 0; z-index: 2000;
-      background: rgba(0,0,0,0.6); backdrop-filter: blur(15px);
-      align-items: center; justify-content: center; flex-direction: column;
+      background: var(--bg); align-items: center; justify-content: center;
+      font-family: var(--serif); color: var(--accent); font-size: 1.4rem;
     }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>NomNom</h1>
-  <p>Culinary Architect v3.0</p>
+  <h1>The Chef's Nook</h1>
+  <p>What are we cooking this week, Nicole?</p>
 </div>
 
-<div class="container">
-  <div class="glass-card counter-grid">
-    <div class="counter-box">
-      <span class="count-label">Breakfast</span>
-      <div class="count-controls">
-        <button class="count-btn" onclick="adj('breakfast', -1)">-</button>
-        <span class="count-val" id="v-breakfast">0</span>
-        <button class="count-btn" onclick="adj('breakfast', 1)">+</button>
+<div class="wrap">
+  <div class="card">
+    <div class="meal-row">
+      <div class="label-group"><span class="emoji">☀️</span><strong>Breakfast</strong></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="adj('breakfast',-1)">-</button>
+        <span class="step-val" id="v-breakfast">0</span>
+        <button class="step-btn" onclick="adj('breakfast',1)">+</button>
       </div>
     </div>
-    <div class="counter-box">
-      <span class="count-label">Lunch</span>
-      <div class="count-controls">
-        <button class="count-btn" onclick="adj('lunch', -1)">-</button>
-        <span class="count-val" id="v-lunch">0</span>
-        <button class="count-btn" onclick="adj('lunch', 1)">+</button>
+    <div class="meal-row">
+      <div class="label-group"><span class="emoji">🥗</span><strong>Lunch</strong></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="adj('lunch',-1)">-</button>
+        <span class="step-val" id="v-lunch">0</span>
+        <button class="step-btn" onclick="adj('lunch',1)">+</button>
       </div>
     </div>
-    <div class="counter-box">
-      <span class="count-label">Dinner</span>
-      <div class="count-controls">
-        <button class="count-btn" onclick="adj('dinner', -1)">-</button>
-        <span class="count-val" id="v-dinner">0</span>
-        <button class="count-btn" onclick="adj('dinner', 1)">+</button>
+    <div class="meal-row">
+      <div class="label-group"><span class="emoji">🥘</span><strong>Dinner</strong></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="adj('dinner',-1)">-</button>
+        <span class="step-val" id="v-dinner">0</span>
+        <button class="step-btn" onclick="adj('dinner',1)">+</button>
       </div>
     </div>
   </div>
 
   <div id="pantry-mount"></div>
 
-  <div class="glass-card">
-    <div class="section-title">Flavor Profile</div>
-    <textarea id="notes" placeholder="e.g. Smoky chipotle, umami miso..."></textarea>
+  <div class="card">
+    <div class="section-title">Special Cravings?</div>
+    <textarea id="notes" rows="2" placeholder="Spicy, Miso-glaze, something crunchy..."></textarea>
   </div>
 </div>
 
-<div class="action-bar">
-  <div><small style="color:var(--text-dim)">Total</small><br><strong id="tot">0</strong> Meals</div>
-  <button class="gen-btn" onclick="generate()">Compose</button>
+<div class="bottom-bar">
+  <div><small style="color:var(--text-light)">Selection</small><br><strong id="tot">0</strong> Meals</div>
+  <button class="go-btn" onclick="generate()">Plan My Meals</button>
 </div>
 
-<div class="loader" id="loader"><div class="count-val">Mixing...</div></div>
+<div class="loader" id="loader">Writing your recipes...</div>
 
-<div class="modal" id="modal">
-  <div class="modal-body">
-    <button onclick="closeModal()" style="background:none; border:1px solid #fff; color:#fff; padding:5px 15px; border-radius:10px; margin-bottom:20px;">Close</button>
-    <div id="result" style="white-space: pre-wrap; line-height:1.6"></div>
+<div class="overlay" id="overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div id="result" style="white-space: pre-wrap; font-size: 0.95rem; color:#444;"></div>
+    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600;">Back to Kitchen</button>
   </div>
 </div>
 
@@ -181,7 +205,7 @@
   const client = supabase.createClient(S_URL, S_KEY);
 
   let counts = { breakfast:0, lunch:0, dinner:0 };
-  let allPantry = [];
+  let masterPantry = [];
 
   function adj(t, d) {
     counts[t] = Math.max(0, counts[t] + d);
@@ -192,15 +216,15 @@
   async function init() {
     const { data } = await client.from('inventory').select('*');
     if (data) {
-      allPantry = data.map(i => i.item_name);
+      masterPantry = data.map(i => i.item_name);
       const mount = document.getElementById('pantry-mount');
       const cats = [...new Set(data.map(i => i.ingredient_category))];
       
       cats.forEach(cat => {
         const wrap = document.createElement('div');
-        wrap.className = 'glass-card';
-        wrap.innerHTML = `<div class="section-title">${cat || 'Essentials'}</div><div class="chip-wrap"></div>`;
-        const chips = wrap.querySelector('.chip-wrap');
+        wrap.className = 'card';
+        wrap.innerHTML = `<div class="section-title">${cat || 'Pantry'}</div><div class="chip-flex"></div>`;
+        const chips = wrap.querySelector('.chip-flex');
         data.filter(i => i.ingredient_category === cat).forEach(item => {
           const c = document.createElement('div');
           c.className = 'chip';
@@ -214,26 +238,25 @@
   }
 
   async function generate() {
-    if(counts.breakfast + counts.lunch + counts.dinner === 0) return alert("Select meals.");
+    if(counts.breakfast + counts.lunch + counts.dinner === 0) return alert("Pick your meals!");
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText);
     document.getElementById('loader').style.display = 'flex';
 
-    const prompt = `Nicole's Culinary Architect. MASTER PANTRY: [${allPantry.join(', ')}]. USER PRIORITY: [${sel.join(', ')}]. PLAN: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D. 30g+ Protein. Single serving. NO BLOAT. High culinary skill.`;
+    const prompt = `Nicole's Culinary Architect. MASTER PANTRY: [${masterPantry.join(', ')}]. USER PRIORITY: [${sel.join(', ')}]. PLAN: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D. 30g+ Protein. Max 2-3 eggs total per meal. Use varied protein sources. Warm, homey recipe tone.`;
 
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const d = await res.json();
       document.getElementById('result').innerText = d.content[0].text;
-      document.getElementById('modal').style.display = 'block';
-    } catch(e) { alert("API Error."); }
+      document.getElementById('overlay').style.display = 'flex';
+    } catch(e) { alert("Error connecting to chef."); }
     document.getElementById('loader').style.display = 'none';
   }
 
-  function closeModal() { document.getElementById('modal').style.display = 'none'; }
+  function closeModal() { document.getElementById('overlay').style.display = 'none'; }
   init();
 </script>
 </body>
