@@ -169,22 +169,22 @@
       System: Strategic Meal Prep Architect (Singapore/Metric).
       
       CORE STRATEGY:
-      1. BATCH PREP FOCUS: Design 1 "Hero Recipe" per meal type (B, L, D, Dessert) that scales.
-      2. SAVORY MANDATE: Lunch and Dinner must ALWAYS be savory, substantial main courses.
-      3. SWEET EXCEPTION: Only use dessert slots for sweets/mousses/treats.
-      4. CULINARY BALANCE: Use the selections [${sel.join(', ')}] as anchors. If an item like "Dark Chocolate" is selected but no Dessert is requested, ignore it or use it as a subtle savory garnish (e.g., mole).
-      5. TRUTH IN INGREDIENTS: "Fillet" = Raw. Match cooking times exactly.
+      1. BATCH PREP FOCUS: Design 1 "Hero Recipe" per meal type (B, L, D, Dessert) that scales based on requested volume.
+      2. SAVORY MANDATE: Lunch and Dinner must ALWAYS be savory, protein-heavy main courses. Never use them for sweets.
+      3. SWEET EXCEPTION: Only use Dessert slots for treats/mousses.
+      4. PREP LOGIC: If I have 4 lunches, make ONE recipe serving 4.
+      5. TRUTH IN INGREDIENTS: "Fillet" = Raw. match cooking instructions.
       
       CONTEXT:
       - Inventory: [${pantryContext}]
       - Priority Selections: [${sel.join(', ')}]
-      - Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert portions.
-      - Flavor Notes: ${document.getElementById('notes').value || 'Creative & Gourmet'}
+      - Schedule: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
+      - Flavor Notes: ${document.getElementById('notes').value || 'Creative & Professional'}
 
-      OUTPUT FORMAT (Always start each new recipe with [RECIPE]):
+      OUTPUT FORMAT:
       [RECIPE]
       ## [Meal Type] Batch: [Recipe Title] (Serves X)
-      *Chef's Note: Quality/Shelf-life context.*
+      *Chef's Note: Longevity and prep efficiency tip.*
       - **Macros (Per Serving):** [Metric P/C/F/kcal]
       ### 📋 Ingredients List (Total for the Batch)
       [Metric quantities]
@@ -217,8 +217,7 @@
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
     
     recipes.forEach((recipeText, index) => {
-      const lines = recipeText.trim().split('\n');
-      const mealName = lines[0].replace('##', '').trim();
+      const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
       
       const div = document.createElement('div');
       div.className = 'recipe-card';
@@ -243,7 +242,7 @@
       btn.disabled = true;
     } else {
       console.error("Save failed:", error);
-      alert(`Save failed: ${error.message}. Ensure you ran the SQL Policies!`);
+      alert(`Save failed: ${error.message}. Check your Supabase RLS policies.`);
     }
   }
 
