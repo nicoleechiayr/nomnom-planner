@@ -22,7 +22,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
 
-    .header { padding: 40px 24px 20px; }
+    .header { padding: 40px 24px 20px; text-align: left; }
     .header h1 { font-family: var(--serif); font-size: 2rem; color: var(--accent); }
     .header p { color: var(--text-light); font-size: 0.9rem; }
 
@@ -52,7 +52,7 @@
     }
     .chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 0.9rem; background: var(--accent-light); outline: none; }
+    textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 0.9rem; background: var(--accent-light); outline: none; resize: none; }
 
     .bottom-bar {
       position: fixed; bottom: 20px; left: 16px; right: 16px;
@@ -60,8 +60,9 @@
       border-radius: 20px; padding: 16px 20px;
       display: flex; justify-content: space-between; align-items: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      z-index: 900;
     }
-    .go-btn { background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; }
+    .go-btn { background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
 
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; padding: 20px; align-items: flex-end; }
     .modal { background: #fff; border-radius: 24px; width: 100%; max-height: 85vh; padding: 24px; overflow-y: auto; }
@@ -101,8 +102,8 @@
 
 <div class="overlay" id="overlay" onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
-    <div id="result" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6;"></div>
-    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600;">Close</button>
+    <div id="result" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; font-family: var(--sans);"></div>
+    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600; cursor:pointer;">Close</button>
   </div>
 </div>
 
@@ -144,30 +145,35 @@
 
   async function generate() {
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText);
+    const totalCount = counts.breakfast + counts.lunch + counts.dinner;
+    if (totalCount === 0) return alert("Select meal counts first.");
+    
     document.getElementById('loader').style.display = 'flex';
 
     const prompt = `
-      You are a high-performance Meal Strategy Agent. 
-      Tone: Neutral, professional, efficient.
+      System: Professional Meal Strategy Agent.
+      Location: Singapore (Strictly use Metric System: g, ml, kg).
+      Tone: Neutral, logical, efficient.
       
       CONTEXT:
       - Master Pantry: [${masterPantry.join(', ')}]
-      - User Priorities (MUST use): [${sel.join(', ')}]
-      - Meal Counts: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
-      
-      STRATEGY RULES:
-      1. AUDIT: For every recipe, cross-reference the ingredient list against the Master Pantry. 
-         - If in pantry: Label as "✅ IN-STOCK".
-         - If NOT in pantry: Label as "🛒 SHOPPING LIST".
-      2. VENTURE OUT: Do not limit yourself to ONLY the pantry. Suggest 2-3 fresh/exciting ingredients (e.g. fresh herbs, specific produce, oils) to elevate the meal.
-      3. LOGIC: 30g+ protein per meal. No more than 3 whole eggs per meal. Single serving focus.
-      
-      OUTPUT:
+      - User Priorities (Must use): [${sel.join(', ')}]
+      - Plan: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      - Flavor Notes: ${document.getElementById('notes').value || 'None'}
+
+      OUTPUT STRUCTURE (Repeat for each meal):
       ## [Meal Name]
-      - **Macros:** [P/C/F/kcal]
-      - **✅ IN-STOCK:** [List]
-      - **🛒 SHOPPING LIST:** [List]
-      - **Instructions:** [Numbered list]
+      - **Macros:** P: [g] | C: [g] | F: [g] | [kcal]
+      
+      ### 📋 Ingredients List
+      [Full consolidated list with metric quantities]
+
+      ### 🔍 Inventory Audit
+      - **✅ IN-STOCK:** [Items found in Master Pantry]
+      - **🛒 SHOPPING LIST:** [Items NOT in pantry + 2 fresh additions to elevate the meal]
+      
+      ### 🔪 Instructions
+      [Numbered steps using metric units]
     `;
 
     try {
@@ -176,7 +182,9 @@
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const d = await res.json();
-      document.getElementById('result').innerText = d.content[0].text;
+      const planResult = d.content ? d.content[0].text : "Error generating plan.";
+
+      document.getElementById('result').innerText = planResult;
       document.getElementById('overlay').style.display = 'flex';
     } catch(e) { alert("API Error."); }
     document.getElementById('loader').style.display = 'none';
