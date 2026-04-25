@@ -22,9 +22,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
 
-    .header { padding: 40px 24px 20px; text-align: left; }
+    .header { padding: 40px 24px 20px; text-align: left; display: flex; justify-content: space-between; align-items: flex-start; }
     .header h1 { font-family: var(--serif); font-size: 2rem; color: var(--accent); }
     .header p { color: var(--text-light); font-size: 0.9rem; }
+    
+    .history-trigger { background: var(--accent-light); border: 1px solid var(--border); padding: 8px 12px; border-radius: 12px; cursor: pointer; font-family: var(--sans); font-weight: 600; color: var(--accent); font-size: 0.8rem; }
 
     .wrap { padding: 0 16px 140px; max-width: 600px; margin: 0 auto; }
 
@@ -70,6 +72,7 @@
     .recipe-card {
       background: var(--accent-light); border-radius: 16px; padding: 16px;
       margin-bottom: 16px; position: relative; border: 1px solid var(--border);
+      text-align: left;
     }
     .save-btn {
       position: absolute; top: 16px; right: 16px;
@@ -84,8 +87,11 @@
 <body>
 
 <div class="header">
-  <h1>Planner</h1>
-  <p>Strategic Meal Prep Execution</p>
+  <div>
+    <h1>Planner</h1>
+    <p>Strategic Meal Prep Execution</p>
+  </div>
+  <button class="history-trigger" onclick="viewHistory()">📜 History</button>
 </div>
 
 <div class="wrap">
@@ -169,11 +175,11 @@
       System: Strategic Meal Prep Architect (Singapore/Metric).
       
       CORE STRATEGY:
-      1. BATCH PREP FOCUS: Design 1 "Hero Recipe" per meal type (B, L, D, Dessert) that scales based on requested volume.
-      2. SAVORY MANDATE: Lunch and Dinner must ALWAYS be savory, protein-heavy main courses. Never use them for sweets.
-      3. SWEET EXCEPTION: Only use Dessert slots for treats/mousses.
-      4. PREP LOGIC: If I have 4 lunches, make ONE recipe serving 4.
-      5. TRUTH IN INGREDIENTS: "Fillet" = Raw. match cooking instructions.
+      1. BATCH PREP FOCUS: Design 1 "Hero Recipe" per meal type (B, L, D, Dessert) that scales.
+      2. SAVORY MANDATE: Lunch and Dinner must ALWAYS be savory main courses. No desserts in these slots.
+      3. DESSERT SLOTS: Only use the requested Dessert portions for sweets/mousses.
+      4. BATCH LOGIC: If counts[Lunch] is 4, provide ONE recipe that serves 4.
+      5. TRUTH IN INGREDIENTS: "Fillet" = Raw. Check inventory carefully.
       
       CONTEXT:
       - Inventory: [${pantryContext}]
@@ -184,15 +190,15 @@
       OUTPUT FORMAT:
       [RECIPE]
       ## [Meal Type] Batch: [Recipe Title] (Serves X)
-      *Chef's Note: Longevity and prep efficiency tip.*
-      - **Macros (Per Serving):** [Metric P/C/F/kcal]
+      *Chef's Note: Efficiency and taste longevity.*
+      - **Macros (Per Serving):** [P/C/F/kcal]
       ### 📋 Ingredients List (Total for the Batch)
-      [Metric quantities]
+      [Quantities]
       ### 🔍 Inventory Audit
-      - **✅ FROM YOUR FRIDGE:** [Items used]
+      - **✅ FROM YOUR FRIDGE:** [Items]
       - **🛒 MARKET TRIP:** [Additions]
       ### 🔪 Batch Prep Instructions
-      [Technical steps]
+      [Steps]
     `;
 
     try {
@@ -218,32 +224,55 @@
     
     recipes.forEach((recipeText, index) => {
       const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
-      
       const div = document.createElement('div');
       div.className = 'recipe-card';
       div.innerHTML = `
-        <button class="save-btn" id="save-${index}" onclick="saveToHistory('${index}', \`${recipeText.replace(/`/g, '\\`')}\`, '${mealName}')">Save</button>
-        <div style="white-space: pre-wrap; font-size: 0.9rem; text-align: left;">${recipeText.trim()}</div>
+        <button class="save-btn" id="save-${index}" data-db-id=""
+          onclick="handleSaveToggle('${index}', \`${recipeText.replace(/`/g, '\\`')}\`, '${mealName}')">
+          Save
+        </button>
+        <div style="white-space: pre-wrap; font-size: 0.9rem;">${recipeText.trim()}</div>
       `;
       container.appendChild(div);
     });
   }
 
-  async function saveToHistory(id, content, name) {
-    const btn = document.getElementById(`save-${id}`);
-    const { error } = await client.from('history').insert([{ 
-      plan_text: content, 
-      meal_summary: name 
-    }]);
+  async function handleSaveToggle(index, content, name) {
+    const btn = document.getElementById(`save-${index}`);
+    const existingId = btn.getAttribute('data-db-id');
 
-    if (!error) {
-      btn.innerText = "Saved!";
-      btn.classList.add('saved');
-      btn.disabled = true;
+    if (!existingId) {
+      const { data, error } = await client.from('history').insert([{ plan_text: content, meal_summary: name }]).select();
+      if (!error && data.length > 0) {
+        btn.innerText = "Unsave";
+        btn.classList.add('saved');
+        btn.setAttribute('data-db-id', data[0].id);
+      } else { alert("Save failed. Check SQL Policies."); }
     } else {
-      console.error("Save failed:", error);
-      alert(`Save failed: ${error.message}. Check your Supabase RLS policies.`);
+      const { error } = await client.from('history').delete().eq('id', existingId);
+      if (!error) {
+        btn.innerText = "Save";
+        btn.classList.remove('saved');
+        btn.setAttribute('data-db-id', '');
+      }
     }
+  }
+
+  async function viewHistory() {
+    document.getElementById('loader').style.display = 'flex';
+    const { data, error } = await client.from('history').select('*').order('created_at', { ascending: false });
+    if (!error) {
+      const container = document.getElementById('recipe-container');
+      container.innerHTML = '<div class="section-title">Saved Preps</div>';
+      data.forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'recipe-card';
+        div.innerHTML = `<small>${new Date(row.created_at).toLocaleDateString()}</small><div style="white-space: pre-wrap;">${row.plan_text}</div>`;
+        container.appendChild(div);
+      });
+      document.getElementById('overlay').style.display = 'flex';
+    }
+    document.getElementById('loader').style.display = 'none';
   }
 
   function closeModal() { document.getElementById('overlay').style.display = 'none'; }
