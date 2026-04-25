@@ -49,6 +49,7 @@
     .chip {
       padding: 7px 14px; border-radius: 12px; background: #fff;
       border: 1px solid var(--border); font-size: 0.85rem; cursor: pointer;
+      transition: all 0.2s ease;
     }
     .chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -66,6 +67,17 @@
 
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; padding: 20px; align-items: flex-end; }
     .modal { background: #fff; border-radius: 24px; width: 100%; max-height: 85vh; padding: 24px; overflow-y: auto; }
+
+    .recipe-card {
+      background: var(--accent-light); border-radius: 16px; padding: 16px;
+      margin-bottom: 16px; position: relative; border: 1px solid var(--border);
+    }
+    .save-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: #fff; border: 1px solid var(--accent); color: var(--accent);
+      padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.7rem;
+    }
+    .save-btn.saved { background: var(--accent); color: #fff; border-color: transparent; }
 
     .loader { display: none; position: fixed; inset: 0; z-index: 2000; background: var(--bg); align-items: center; justify-content: center; font-weight: 600; color: var(--accent); }
   </style>
@@ -102,7 +114,7 @@
 
 <div class="overlay" id="overlay" onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
-    <div id="result" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; font-family: var(--sans);"></div>
+    <div id="recipe-container"></div>
     <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600; cursor:pointer;">Close</button>
   </div>
 </div>
@@ -124,17 +136,23 @@
   async function init() {
     const { data } = await client.from('inventory').select('*');
     if (data) {
-      masterPantry = data.map(i => i.item_name);
+      // Store names and quantities for context
+      masterPantry = data.map(i => ({ name: i.item_name, qty: i.quantity || 'unspecified' }));
+      
       const mount = document.getElementById('pantry-mount');
+      mount.innerHTML = '';
       const cats = [...new Set(data.map(i => i.ingredient_category))];
+      
       cats.forEach(cat => {
         const wrap = document.createElement('div');
         wrap.className = 'card';
         wrap.innerHTML = `<div class="section-title">${cat || 'Pantry'}</div><div class="chip-flex"></div>`;
         const chips = wrap.querySelector('.chip-flex');
+        
         data.filter(i => i.ingredient_category === cat).forEach(item => {
           const c = document.createElement('div');
-          c.className = 'chip'; c.innerText = item.item_name;
+          c.className = 'chip'; 
+          c.innerText = `${item.item_name} (${item.quantity || '?'})`;
           c.onclick = () => c.classList.toggle('selected');
           chips.appendChild(c);
         });
@@ -144,50 +162,95 @@
   }
 
   async function generate() {
-    const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText);
+    const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText.split(' (')[0]);
     const totalCount = counts.breakfast + counts.lunch + counts.dinner;
     if (totalCount === 0) return alert("Select meal counts first.");
     
     document.getElementById('loader').style.display = 'flex';
 
+    // Format pantry context for the AI
+    const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
+
     const prompt = `
-      System: Professional Meal Strategy Agent.
-      Location: Singapore (Strictly use Metric System: g, ml, kg).
-      Tone: Neutral, logical, efficient.
+      System: Creative Culinary Strategist (Singapore/Metric).
+      Tone: Professional, inspired, efficient.
       
       CONTEXT:
-      - Master Pantry: [${masterPantry.join(', ')}]
-      - User Priorities (Must use): [${sel.join(', ')}]
-      - Plan: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
-      - Flavor Notes: ${document.getElementById('notes').value || 'None'}
+      - My Current Inventory (Use these quantities as reference): [${pantryContext}]
+      - Primary Selections (MUST incorporate these): [${sel.join(', ')}]
+      - Meal Requirements: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      - Flavor Profile: ${document.getElementById('notes').value || 'Open creative interpretation'}
 
-      OUTPUT STRUCTURE (Repeat for each meal):
+      PHILOSOPHY:
+      1. Use my primary selections as the foundation, but BE CREATIVE. 
+      2. If adding a specific protein or produce item (not in my fridge) would make the meal significantly better, suggest it. 
+      3. For every ingredient, compare recipe needs against my inventory quantities.
+      
+      OUTPUT FORMAT (Start each meal with [RECIPE]):
+      [RECIPE]
       ## [Meal Name]
-      - **Macros:** P: [g] | C: [g] | F: [g] | [kcal]
+      *Chef's Note: A quick sentence on why this flavor combination works.*
+      - **Macros:** [Metric P/C/F/kcal]
       
       ### 📋 Ingredients List
-      [Full consolidated list with metric quantities]
-
+      [Full metric list]
+      
       ### 🔍 Inventory Audit
-      - **✅ IN-STOCK:** [Items found in Master Pantry]
-      - **🛒 SHOPPING LIST:** [Items NOT in pantry + 2 fresh additions to elevate the meal]
+      - **✅ FROM YOUR FRIDGE:** [Items used from inventory + qty used]
+      - **🛒 MARKET TRIP:** [Creative additions or missing stock needed for this meal]
       
       ### 🔪 Instructions
-      [Numbered steps using metric units]
+      [Numbered metric steps]
     `;
 
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const d = await res.json();
-      const planResult = d.content ? d.content[0].text : "Error generating plan.";
-
-      document.getElementById('result').innerText = planResult;
+      renderRecipes(d.content[0].text);
       document.getElementById('overlay').style.display = 'flex';
-    } catch(e) { alert("API Error."); }
+    } catch(e) { 
+      alert("Execution error. Check connection."); 
+    }
     document.getElementById('loader').style.display = 'none';
+  }
+
+  function renderRecipes(text) {
+    const container = document.getElementById('recipe-container');
+    container.innerHTML = '';
+    const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
+    
+    recipes.forEach((recipeText, index) => {
+      const lines = recipeText.trim().split('\n');
+      const mealName = lines[0].replace('##', '').trim();
+      
+      const div = document.createElement('div');
+      div.className = 'recipe-card';
+      div.innerHTML = `
+        <button class="save-btn" id="save-${index}" onclick="saveToHistory('${index}', \`${recipeText.replace(/`/g, '\\`')}\`, '${mealName}')">Save Meal</button>
+        <div style="white-space: pre-wrap; font-size: 0.9rem;">${recipeText.trim()}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  async function saveToHistory(id, content, name) {
+    const btn = document.getElementById(`save-${id}`);
+    const { error } = await client.from('history').insert([{ 
+      plan_text: content, 
+      meal_summary: name 
+    }]);
+    
+    if (!error) {
+      btn.innerText = "Saved!";
+      btn.classList.add('saved');
+      btn.disabled = true;
+    } else {
+      alert("Save failed.");
+    }
   }
 
   function closeModal() { document.getElementById('overlay').style.display = 'none'; }
