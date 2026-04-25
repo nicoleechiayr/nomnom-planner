@@ -105,11 +105,11 @@
 
 <script>
   const SUPABASE_URL = 'https://gmxbebwnmundpuvswcku.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6I..."'; // Keep your existing key here
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   
   const counts = { breakfast: 0, lunch: 0, dinner: 0 };
-  let fullPantryList = []; // New global to hold everything
+  let fullPantryList = [];
 
   function changeCount(t, d) {
     counts[t] = Math.max(0, Math.min(7, counts[t] + d));
@@ -118,7 +118,8 @@
   }
 
   async function init() {
-    const { data } = await supabaseClient.from('inventory').select('*');
+    const { data, error } = await supabaseClient.from('inventory').select('*');
+    if (error) console.error("Supabase error:", error);
     if (data) {
       fullPantryList = data.map(i => i.item_name);
       render(data);
@@ -164,7 +165,7 @@
       You are Nicole's Culinary Architect.
       
       MASTER PANTRY (Items in her kitchen): [${fullPantryList.join(', ')}]
-      USER SELECTED (Items she specifically wants to use): [${selectedItems.join(', ')}]
+      USER SELECTED (Prioritize using these): [${selectedItems.join(', ')}]
       
       PLAN: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
       NOTES: ${extras || 'Make it exciting.'}.
@@ -173,7 +174,7 @@
       1. PANTRY AWARENESS: You have access to the full MASTER PANTRY list. Even if an item isn't in 'USER SELECTED', she still has it in her kitchen.
       2. INVENTORY SYNC: 
          - If a required ingredient is in the MASTER PANTRY, you MUST list it under "✅ IN-STOCK".
-         - If an ingredient is in "USER SELECTED," prioritize it as a core component of the week.
+         - If an ingredient is in "USER SELECTED," prioritize it as a core component.
          - Only list items in "🛒 SHOPPING LIST" if they are absent from the MASTER PANTRY entirely.
       3. LOGICAL SERVING SIZES: This is for ONE person. Max 2-3 eggs per meal. Hit 30g+ protein using varied sources.
       4. GOURMET VARIETY: No plain meals. Use bold profiles (Miso, Harissa, Lemongrass).
