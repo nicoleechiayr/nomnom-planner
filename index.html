@@ -106,4 +106,182 @@
     <div class="section-title">Meal Volume</div>
     <div class="meal-row"><div><strong>Breakfast</strong></div><div class="stepper"><button class="step-btn" onclick="adj('breakfast',-1)">-</button><span class="step-val" id="v-breakfast">0</span><button class="step-btn" onclick="adj('breakfast',1)">+</button></div></div>
     <div class="meal-row"><div><strong>Lunch</strong></div><div class="stepper"><button class="step-btn" onclick="adj('lunch',-1)">-</button><span class="step-val" id="v-lunch">0</span><button class="step-btn" onclick="adj('lunch',1)">+</button></div></div>
-    <div class="meal-row"><div><strong>Dinner</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dinner',-
+    <div class="meal-row"><div><strong>Dinner</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dinner',-1)">-</button><span class="step-val" id="v-dinner">0</span><button class="step-btn" onclick="adj('dinner',1)">+</button></div></div>
+    <div class="meal-row"><div><strong>Dessert</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dessert',-1)">-</button><span class="step-val" id="v-dessert">0</span><button class="step-btn" onclick="adj('dessert',1)">+</button></div></div>
+  </div>
+
+  <div id="pantry-mount"></div>
+
+  <div class="card">
+    <div class="section-title">Flavor Constraints</div>
+    <textarea id="notes" rows="2" placeholder="Anything else you want to include?"></textarea>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <div><small>Total Plan</small><br><strong id="tot">0</strong> Meals</div>
+  <button class="go-btn" onclick="generate()">Generate Plan</button>
+</div>
+
+<div class="loader" id="loader">Architecting meals...</div>
+
+<div class="overlay" id="overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div id="recipe-container"></div>
+    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600; cursor:pointer;">Close</button>
+  </div>
+</div>
+
+<script>
+  const S_URL = 'https://gmxbebwnmundpuvswcku.supabase.co';
+  const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
+  const client = supabase.createClient(S_URL, S_KEY);
+
+  let counts = { breakfast:0, lunch:0, dinner:0, dessert:0 };
+  let masterPantry = [];
+
+  function adj(t, d) {
+    counts[t] = Math.max(0, counts[t] + d);
+    document.getElementById(`v-${t}`).innerText = counts[t];
+    document.getElementById('tot').innerText = Object.values(counts).reduce((a, b) => a + b, 0);
+  }
+
+  async function init() {
+    const { data } = await client.from('inventory').select('*');
+    if (data) {
+      masterPantry = data.map(i => ({ name: i.item_name, qty: i.quantity || 'unspecified' }));
+      const mount = document.getElementById('pantry-mount');
+      mount.innerHTML = '';
+      const cats = [...new Set(data.map(i => i.ingredient_category))];
+      cats.forEach(cat => {
+        const wrap = document.createElement('div');
+        wrap.className = 'card';
+        wrap.innerHTML = `<div class="section-title">${cat || 'Pantry'}</div><div class="chip-flex"></div>`;
+        const chips = wrap.querySelector('.chip-flex');
+        data.filter(i => i.ingredient_category === cat).forEach(item => {
+          const c = document.createElement('div');
+          c.className = 'chip'; 
+          c.innerText = `${item.item_name} (${item.quantity || '?'})`;
+          c.onclick = () => c.classList.toggle('selected');
+          chips.appendChild(c);
+        });
+        mount.appendChild(wrap);
+      });
+    }
+  }
+
+  async function generate() {
+    const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText.split(' (')[0]);
+    if (Object.values(counts).reduce((a, b) => a + b, 0) === 0) return alert("Select meal counts.");
+    
+    document.getElementById('loader').style.display = 'flex';
+    const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
+
+    const prompt = `
+      System: Strategic Meal Architect (Claude Mode).
+      
+      CORE STRATEGY:
+      1. BATCH FOCUS: 1 high-quality recipe per type.
+      2. SAVORY GOALS (B/L/D): <500 kcal per serving. Protein target: 25-30g.
+      3. DESSERT GOAL: Low fat focus.
+      4. PORTION REALISM: If a meat portion (e.g. 300g Salmon) exceeds 30g protein, you MUST calculate and split it into multiple servings.
+      
+      CLAUDE MATH VERIFICATION:
+      - You must show internal rigor. Calculate: (P*4) + (C*4) + (F*9).
+      - Ensure calorie counts actually match ingredient weights.
+
+      Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
+      Inventory: [${pantryContext}]
+      Priority: [${sel.join(', ')}]
+      Notes: ${document.getElementById('notes').value}
+
+      OUTPUT FORMATTING:
+      - Wrap every meal recipe in [RECIPE] tags.
+      - Start with: ### 🔍 Inventory Check
+    `;
+
+    try {
+      const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await res.json();
+      renderRecipes(d.content[0].text);
+      document.getElementById('overlay').style.display = 'flex';
+    } catch(e) { console.error(e); }
+    document.getElementById('loader').style.display = 'none';
+  }
+
+  function renderRecipes(text) {
+    const container = document.getElementById('recipe-container');
+    container.innerHTML = '';
+    const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
+    
+    recipes.forEach((recipeText, index) => {
+      const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
+      const div = document.createElement('div');
+      div.className = 'recipe-card';
+      const uniqueId = `save-${index}`;
+      div.innerHTML = `
+        <button class="save-btn" id="${uniqueId}" data-db-id=""
+          onclick="handleSaveToggle('${uniqueId}', \`${recipeText.replace(/`/g, '\\`')}\`, '${mealName}')">
+          Save
+        </button>
+        <div style="white-space: pre-wrap; font-size: 0.9rem;">${recipeText.trim()}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  async function handleSaveToggle(uniqueId, content, name) {
+    const btn = document.getElementById(uniqueId);
+    const id = btn.getAttribute('data-db-id');
+    
+    if (!id) {
+      const { data, error } = await client.from('history').insert([{ plan_text: content, meal_summary: name }]).select();
+      if (!error && data.length > 0) {
+        btn.innerText = "Unsave"; btn.classList.add('saved'); btn.setAttribute('data-db-id', data[0].id);
+      }
+    } else {
+      const { error } = await client.from('history').delete().eq('id', id);
+      if (!error) { 
+        btn.innerText = "Save"; btn.classList.remove('saved'); btn.setAttribute('data-db-id', ''); 
+        if (uniqueId.startsWith('hist-')) {
+          btn.parentElement.style.opacity = '0.4';
+          btn.parentElement.style.pointerEvents = 'none';
+        }
+      }
+    }
+  }
+
+  async function viewHistory() {
+    document.getElementById('loader').style.display = 'flex';
+    const { data, error } = await client.from('history').select('*').order('created_at', { ascending: false });
+    if (!error) {
+      const container = document.getElementById('recipe-container');
+      container.innerHTML = '<div class="section-title">Saved History</div>';
+      data.forEach((row) => {
+        const div = document.createElement('div');
+        div.className = 'recipe-card';
+        const uniqueId = `hist-save-${row.id}`;
+        div.innerHTML = `
+          <button class="save-btn saved" id="${uniqueId}" data-db-id="${row.id}"
+            onclick="handleSaveToggle('${uniqueId}', \`${row.plan_text.replace(/`/g, '\\`')}\`, '${row.meal_summary}')">
+            Unsave
+          </button>
+          <small>${new Date(row.created_at).toLocaleDateString()}</small>
+          <div style="white-space: pre-wrap; font-size: 0.9rem; margin-top:10px;">${row.plan_text}</div>
+        `;
+        container.appendChild(div);
+      });
+      document.getElementById('overlay').style.display = 'flex';
+    }
+    document.getElementById('loader').style.display = 'none';
+  }
+
+  function closeModal() { document.getElementById('overlay').style.display = 'none'; }
+  init();
+</script>
+</body>
+</html>
