@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>NomNom Planner</title>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
       --bg: #FDFCF8;
@@ -167,32 +167,37 @@
 
   async function generate() {
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText.split(' (')[0]);
-    const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
-    if (totalCount === 0) return alert("Select meal counts.");
+    if (Object.values(counts).reduce((a, b) => a + b, 0) === 0) return alert("Select meal counts.");
     
     document.getElementById('loader').style.display = 'flex';
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
     const prompt = `
-      System: Strategic Meal Prep Architect.
+      System: Strategic Meal Architect.
       
       CORE STRATEGY:
-      1. BATCH FOCUS: 1 hero recipe per type.
-      2. SAVORY GOALS (B/L/D): Strictly <500 kcal per serving. Protein must be between 25-30g per serving. No more, no less.
-      3. DESSERT GOAL: Strictly low fat. Protein is not a priority for desserts.
-      4. PORTION CONTROL: Do NOT use entire inventory if it violates macro goals. 
-      5. BATCH SIZE: Scale recipe to requested volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
+      1. BATCH FOCUS: 1 hero recipe per meal type requested.
+      2. SAVORY GOALS (B/L/D): <500 kcal per serving. Protein: 25-30g per serving.
+      3. DESSERT GOAL: Low fat. Protein NOT a priority.
+      4. PORTION REALISM: Do NOT use massive protein portions (e.g., 300g salmon) for 1 meal. Split inventory logically.
       
+      Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
       Inventory: [${pantryContext}]
       Priority: [${sel.join(', ')}]
       Notes: ${document.getElementById('notes').value}
 
-      FORMAT:
+      OUTPUT RULES:
+      - Separate each meal recipe with the exact tag [RECIPE].
+      - Include "IN STOCK" (items used from inventory) and "SHOPPING LIST" (items missing) sections.
+
+      FORMAT PER MEAL:
       [RECIPE]
       ## [Meal Type] Batch: [Title] (Serves X)
       - **Macros (Per Serving):** [P/C/F/kcal]
       ### 📋 Ingredients List
-      ### 🔍 Inventory Audit
+      ### 🔍 Inventory Check
+      - **✅ IN STOCK:** [Items used from pantry]
+      - **🛒 SHOPPING LIST:** [Items needed]
       ### 🔪 Instructions
     `;
 
@@ -213,6 +218,7 @@
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
+    
     recipes.forEach((recipeText, index) => {
       const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
       const div = document.createElement('div');
@@ -230,14 +236,14 @@
 
   async function handleSaveToggle(index, content, name) {
     const btn = document.getElementById(`save-${index}`);
-    const existingId = btn.getAttribute('data-db-id');
-    if (!existingId) {
+    const id = btn.getAttribute('data-db-id');
+    if (!id) {
       const { data, error } = await client.from('history').insert([{ plan_text: content, meal_summary: name }]).select();
       if (!error && data.length > 0) {
         btn.innerText = "Unsave"; btn.classList.add('saved'); btn.setAttribute('data-db-id', data[0].id);
       }
     } else {
-      const { error } = await client.from('history').delete().eq('id', existingId);
+      const { error } = await client.from('history').delete().eq('id', id);
       if (!error) { btn.innerText = "Save"; btn.classList.remove('saved'); btn.setAttribute('data-db-id', ''); }
     }
   }
