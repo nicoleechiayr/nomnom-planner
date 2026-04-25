@@ -3,199 +3,106 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>NomNom</title>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+  <title>NomNom Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #FDFCF8; /* Warm paper color */
+      --bg: #FDFCF8;
       --card: #FFFFFF;
-      --accent: #6B8E6B; /* Soft Sage */
+      --accent: #4A674A;
       --accent-light: #F0F4F0;
-      --text: #434343;
-      --text-light: #8C8C8C;
-      --border: #E8E4D9;
-      --serif: 'Playfair Display', serif;
+      --text: #2C2C2C;
+      --text-light: #707070;
+      --border: #E2DDD2;
       --sans: 'Quicksand', sans-serif;
+      --serif: 'Playfair Display', serif;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body { 
-      background: var(--bg); 
-      color: var(--text); 
-      font-family: var(--sans); 
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
 
-    /* HEADER */
-    .header {
-      padding: 40px 24px 20px;
-      text-align: center;
-    }
-    .header h1 {
-      font-family: var(--serif);
-      font-size: 2.2rem;
-      color: var(--accent);
-      font-style: italic;
-    }
-    .header p { color: var(--text-light); font-size: 0.95rem; margin-top: 5px; }
+    .header { padding: 40px 24px 20px; }
+    .header h1 { font-family: var(--serif); font-size: 2rem; color: var(--accent); }
+    .header p { color: var(--text-light); font-size: 0.9rem; }
 
-    /* CONTAINERS */
-    .wrap { padding: 0 16px 140px; max-width: 500px; margin: 0 auto; }
+    .wrap { padding: 0 16px 140px; max-width: 600px; margin: 0 auto; }
 
     .card {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 20px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 12px rgba(107, 142, 107, 0.05);
+      background: var(--card); border-radius: 20px; padding: 20px;
+      margin-bottom: 16px; border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
 
-    /* MEAL STEPS */
     .meal-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--accent-light);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--accent-light);
     }
     .meal-row:last-child { border-bottom: none; }
-    .label-group { display: flex; align-items: center; gap: 12px; }
-    .emoji { font-size: 1.4rem; }
     
-    .stepper {
-      display: flex;
-      align-items: center;
-      background: var(--accent-light);
-      border-radius: 12px;
-      padding: 4px;
-    }
-    .step-btn {
-      width: 32px; height: 32px; border: none; background: #fff;
-      border-radius: 8px; color: var(--accent); font-weight: bold;
-      cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .step-val { width: 34px; text-align: center; font-weight: 600; color: var(--accent); }
+    .stepper { display: flex; align-items: center; background: var(--accent-light); border-radius: 10px; padding: 4px; }
+    .step-btn { width: 32px; height: 32px; border: none; background: #fff; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--accent); }
+    .step-val { width: 34px; text-align: center; font-weight: 600; }
 
-    /* PANTRY CHIPS */
-    .section-title {
-      font-family: var(--serif);
-      font-size: 1.2rem;
-      margin-bottom: 12px;
-      color: var(--accent);
-    }
+    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin-bottom: 12px; font-weight: 600; }
     .chip-flex { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip {
-      padding: 8px 16px;
-      border-radius: 100px;
-      background: #fff;
-      border: 1.5px solid var(--border);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: 0.2s;
+      padding: 7px 14px; border-radius: 12px; background: #fff;
+      border: 1px solid var(--border); font-size: 0.85rem; cursor: pointer;
     }
-    .chip.selected {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-      box-shadow: 0 4px 10px rgba(107, 142, 107, 0.2);
-    }
+    .chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* NOTES */
-    textarea {
-      width: 100%; border: 1.5px solid var(--border); border-radius: 16px;
-      padding: 12px; font-family: inherit; font-size: 0.9rem; outline: none;
-      background: var(--accent-light);
-    }
+    textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 0.9rem; background: var(--accent-light); outline: none; }
 
-    /* FLOATING BOTTOM BAR */
     .bottom-bar {
-      position: fixed; bottom: 24px; left: 16px; right: 16px;
+      position: fixed; bottom: 20px; left: 16px; right: 16px;
       background: var(--card); border: 1px solid var(--border);
       border-radius: 20px; padding: 16px 20px;
       display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
-    .go-btn {
-      background: var(--accent); color: #fff; border: none;
-      padding: 14px 28px; border-radius: 14px; font-weight: 600;
-      font-size: 0.95rem; cursor: pointer;
-    }
+    .go-btn { background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; }
 
-    /* MODAL */
-    .overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-      z-index: 1000; padding: 20px; align-items: flex-end;
-    }
-    .modal {
-      background: #fff; border-radius: 28px; width: 100%; max-height: 80vh;
-      padding: 30px; overflow-y: auto;
-    }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; padding: 20px; align-items: flex-end; }
+    .modal { background: #fff; border-radius: 24px; width: 100%; max-height: 85vh; padding: 24px; overflow-y: auto; }
 
-    .loader {
-      display: none; position: fixed; inset: 0; z-index: 2000;
-      background: var(--bg); align-items: center; justify-content: center;
-      font-family: var(--serif); color: var(--accent); font-size: 1.4rem;
-    }
+    .loader { display: none; position: fixed; inset: 0; z-index: 2000; background: var(--bg); align-items: center; justify-content: center; font-weight: 600; color: var(--accent); }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>The Chef's Nook</h1>
-  <p>What are we cooking this week, Nicole?</p>
+  <h1>Planner</h1>
+  <p>Strategic Meal Prep Execution</p>
 </div>
 
 <div class="wrap">
   <div class="card">
-    <div class="meal-row">
-      <div class="label-group"><span class="emoji">☀️</span><strong>Breakfast</strong></div>
-      <div class="stepper">
-        <button class="step-btn" onclick="adj('breakfast',-1)">-</button>
-        <span class="step-val" id="v-breakfast">0</span>
-        <button class="step-btn" onclick="adj('breakfast',1)">+</button>
-      </div>
-    </div>
-    <div class="meal-row">
-      <div class="label-group"><span class="emoji">🥗</span><strong>Lunch</strong></div>
-      <div class="stepper">
-        <button class="step-btn" onclick="adj('lunch',-1)">-</button>
-        <span class="step-val" id="v-lunch">0</span>
-        <button class="step-btn" onclick="adj('lunch',1)">+</button>
-      </div>
-    </div>
-    <div class="meal-row">
-      <div class="label-group"><span class="emoji">🥘</span><strong>Dinner</strong></div>
-      <div class="stepper">
-        <button class="step-btn" onclick="adj('dinner',-1)">-</button>
-        <span class="step-val" id="v-dinner">0</span>
-        <button class="step-btn" onclick="adj('dinner',1)">+</button>
-      </div>
-    </div>
+    <div class="section-title">Meal Volume</div>
+    <div class="meal-row"><div><strong>Breakfast</strong></div><div class="stepper"><button class="step-btn" onclick="adj('breakfast',-1)">-</button><span class="step-val" id="v-breakfast">0</span><button class="step-btn" onclick="adj('breakfast',1)">+</button></div></div>
+    <div class="meal-row"><div><strong>Lunch</strong></div><div class="stepper"><button class="step-btn" onclick="adj('lunch',-1)">-</button><span class="step-val" id="v-lunch">0</span><button class="step-btn" onclick="adj('lunch',1)">+</button></div></div>
+    <div class="meal-row"><div><strong>Dinner</strong></div><div class="stepper"><button class="step-btn" onclick="adj('dinner',-1)">-</button><span class="step-val" id="v-dinner">0</span><button class="step-btn" onclick="adj('dinner',1)">+</button></div></div>
   </div>
 
   <div id="pantry-mount"></div>
 
   <div class="card">
-    <div class="section-title">Special Cravings?</div>
-    <textarea id="notes" rows="2" placeholder="Spicy, Miso-glaze, something crunchy..."></textarea>
+    <div class="section-title">Flavor Constraints</div>
+    <textarea id="notes" rows="2" placeholder="e.g. Miso, Harissa, Thai Basil..."></textarea>
   </div>
 </div>
 
 <div class="bottom-bar">
-  <div><small style="color:var(--text-light)">Selection</small><br><strong id="tot">0</strong> Meals</div>
-  <button class="go-btn" onclick="generate()">Plan My Meals</button>
+  <div><small>Total Plan</small><br><strong id="tot">0</strong> Meals</div>
+  <button class="go-btn" onclick="generate()">Generate Plan</button>
 </div>
 
-<div class="loader" id="loader">Writing your recipes...</div>
+<div class="loader" id="loader">Processing meal logic...</div>
 
 <div class="overlay" id="overlay" onclick="closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
-    <div id="result" style="white-space: pre-wrap; font-size: 0.95rem; color:#444;"></div>
-    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600;">Back to Kitchen</button>
+    <div id="result" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6;"></div>
+    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:15px; border-radius:12px; border:none; background:var(--accent-light); color:var(--accent); font-weight:600;">Close</button>
   </div>
 </div>
 
@@ -219,7 +126,6 @@
       masterPantry = data.map(i => i.item_name);
       const mount = document.getElementById('pantry-mount');
       const cats = [...new Set(data.map(i => i.ingredient_category))];
-      
       cats.forEach(cat => {
         const wrap = document.createElement('div');
         wrap.className = 'card';
@@ -227,8 +133,7 @@
         const chips = wrap.querySelector('.chip-flex');
         data.filter(i => i.ingredient_category === cat).forEach(item => {
           const c = document.createElement('div');
-          c.className = 'chip';
-          c.innerText = item.item_name;
+          c.className = 'chip'; c.innerText = item.item_name;
           c.onclick = () => c.classList.toggle('selected');
           chips.appendChild(c);
         });
@@ -238,11 +143,32 @@
   }
 
   async function generate() {
-    if(counts.breakfast + counts.lunch + counts.dinner === 0) return alert("Pick your meals!");
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText);
     document.getElementById('loader').style.display = 'flex';
 
-    const prompt = `Nicole's Culinary Architect. MASTER PANTRY: [${masterPantry.join(', ')}]. USER PRIORITY: [${sel.join(', ')}]. PLAN: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D. 30g+ Protein. Max 2-3 eggs total per meal. Use varied protein sources. Warm, homey recipe tone.`;
+    const prompt = `
+      You are a high-performance Meal Strategy Agent. 
+      Tone: Neutral, professional, efficient.
+      
+      CONTEXT:
+      - Master Pantry: [${masterPantry.join(', ')}]
+      - User Priorities (MUST use): [${sel.join(', ')}]
+      - Meal Counts: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      
+      STRATEGY RULES:
+      1. AUDIT: For every recipe, cross-reference the ingredient list against the Master Pantry. 
+         - If in pantry: Label as "✅ IN-STOCK".
+         - If NOT in pantry: Label as "🛒 SHOPPING LIST".
+      2. VENTURE OUT: Do not limit yourself to ONLY the pantry. Suggest 2-3 fresh/exciting ingredients (e.g. fresh herbs, specific produce, oils) to elevate the meal.
+      3. LOGIC: 30g+ protein per meal. No more than 3 whole eggs per meal. Single serving focus.
+      
+      OUTPUT:
+      ## [Meal Name]
+      - **Macros:** [P/C/F/kcal]
+      - **✅ IN-STOCK:** [List]
+      - **🛒 SHOPPING LIST:** [List]
+      - **Instructions:** [Numbered list]
+    `;
 
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
@@ -252,7 +178,7 @@
       const d = await res.json();
       document.getElementById('result').innerText = d.content[0].text;
       document.getElementById('overlay').style.display = 'flex';
-    } catch(e) { alert("Error connecting to chef."); }
+    } catch(e) { alert("API Error."); }
     document.getElementById('loader').style.display = 'none';
   }
 
