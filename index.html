@@ -97,7 +97,7 @@
 
 <div class="gen-wrap"><button class="gen-btn" onclick="generate()">🧑‍🍳 Generate Chef's Plan</button></div>
 
-<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Analyzing Inventory...</div></div>
+<div class="loader" id="loader"><div class="spin"></div><div style="margin-top:12px">Syncing Kitchen Data...</div></div>
 
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet"><div class="sheet-body" id="sheetText"></div><button style="padding:15px; border:none; background:var(--grouped); font-weight:600;" onclick="closeSheet()">Close</button></div>
@@ -105,10 +105,11 @@
 
 <script>
   const SUPABASE_URL = 'https://gmxbebwnmundpuvswcku.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6I..."'; // Keep your existing key here
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   
   const counts = { breakfast: 0, lunch: 0, dinner: 0 };
+  let fullPantryList = []; // New global to hold everything
 
   function changeCount(t, d) {
     counts[t] = Math.max(0, Math.min(7, counts[t] + d));
@@ -118,7 +119,10 @@
 
   async function init() {
     const { data } = await supabaseClient.from('inventory').select('*');
-    if (data) render(data);
+    if (data) {
+      fullPantryList = data.map(i => i.item_name);
+      render(data);
+    }
   }
 
   function render(items) {
@@ -157,42 +161,39 @@
     const extras = document.getElementById('extras').value;
     
     const prompt = `
-      You are Nicole's Culinary Architect. 
-      USER SELECTED INVENTORY: [${selectedItems.join(', ')}]
+      You are Nicole's Culinary Architect.
+      
+      MASTER PANTRY (Items in her kitchen): [${fullPantryList.join(', ')}]
+      USER SELECTED (Items she specifically wants to use): [${selectedItems.join(', ')}]
+      
       PLAN: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
       NOTES: ${extras || 'Make it exciting.'}.
 
       STRICT AUDIT PROTOCOLS:
-      1. CRITICAL INVENTORY SYNC: Before writing, cross-reference your recipe requirements against the USER SELECTED INVENTORY list. 
-         - If an ingredient is in that list (e.g., "Eggs"), it MUST be listed under "✅ IN-STOCK". 
-         - DO NOT list items as "🛒 SHOPPING LIST" if the user has already selected them. 
-         - BE METICULOUS. If the user clicked it, they have it.
-      2. LOGICAL SERVING SIZES: This is for ONE person. Use common sense for protein volume. DO NOT suggest "6 eggs" for one meal. Max 2-3 eggs; supplement the rest of the protein with lean meats, Greek yogurt, or powders to hit the 30g+ target without excessive volume.
-      3. GOURMET VARIETY: Banish boring "gym bro" meals. Use bold flavor profiles (e.g., Miso, Harissa, Lemongrass). 
-      4. MEAL LABELS: Label clearly as [BREAKFAST], [LUNCH], or [DINNER].
-      5. BATCH-COOK MASTERY: Design for Sunday prep (2-3 hours) with 5-day fridge longevity.
+      1. PANTRY AWARENESS: You have access to the full MASTER PANTRY list. Even if an item isn't in 'USER SELECTED', she still has it in her kitchen.
+      2. INVENTORY SYNC: 
+         - If a required ingredient is in the MASTER PANTRY, you MUST list it under "✅ IN-STOCK".
+         - If an ingredient is in "USER SELECTED," prioritize it as a core component of the week.
+         - Only list items in "🛒 SHOPPING LIST" if they are absent from the MASTER PANTRY entirely.
+      3. LOGICAL SERVING SIZES: This is for ONE person. Max 2-3 eggs per meal. Hit 30g+ protein using varied sources.
+      4. GOURMET VARIETY: No plain meals. Use bold profiles (Miso, Harissa, Lemongrass).
+      5. FORMATTING: Ingredients on NEW LINES. Instructions in Numbered Steps.
 
       OUTPUT FORMAT:
-      
       ## 🏺 THE SUNDAY PREP STRATEGY
       - [Batch prep steps]
 
       ---
-      
       ### [Meal Category] - [Creative Chef Title]
       **Total Ingredient List:**
       - [Ingredient 1]
       
       **Macros:** P: 30g+ | C: XXg | F: XXg | kcal: <500
-      **✅ IN-STOCK:** - [ONLY items present in the User Selected Inventory list]
-      **🛒 SHOPPING LIST:** - [Items NOT in the inventory list]
+      **✅ IN-STOCK:** - [Items found in Master Pantry]
+      **🛒 SHOPPING LIST:** - [Items NOT in Master Pantry]
       
       **Chef's Assembly:** 1. [Step 1]
-      
       ---
-      (Repeat for variations)
-
-      CONSTRAINTS: Single serving logic. Min 30g protein. Max 500 calories.
     `;
 
     document.getElementById('loader').classList.add('show');
