@@ -165,33 +165,50 @@
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
     const prompt = `
-      System: Creative Culinary Strategist (Singapore/Metric).
+      System: Strategic Meal Prep Architect (Singapore/Metric).
+      
+      CORE STRATEGY:
+      1. BATCH PREP FOCUS: Instead of unique recipes for every single slot, design 1 or 2 "Hero Recipes" that can be scaled. For example, if the user wants 4 lunches, suggest ONE high-quality recipe designed for 2 or 4 portions.
+      2. CULINARY BALANCE: Use the selected ingredients [${sel.join(', ')}] as the primary anchor, but combine them with 2-3 "Market Trip" items to create a cohesive, professional-grade dish (e.g., instead of just 'Salmon and Cottage Cheese', suggest a 'Miso-Glazed Salmon with Herbed Cottage Cheese Gnocchi').
+      3. LOGICAL QUANTITY: If the user has 300g salmon, do not spread it across 4 meals. Use it for 2 substantial 150g portions.
+      4. TRUTH IN INGREDIENTS: Check the inventory. "Fillet" = Raw. Match cooking times (e.g. 8-10 mins for salmon fillet) exactly.
       
       CONTEXT:
       - Inventory: [${pantryContext}]
-      - Selections: [${sel.join(', ')}]
-      - Goal: ${counts.breakfast} Breakfasts, ${counts.lunch} Lunches, ${counts.dinner} Dinners.
-      - Flavor Notes: ${document.getElementById('notes').value || 'Creative'}
+      - Priority Selections: [${sel.join(', ')}]
+      - Total Prep Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D.
+      - Flavor Notes: ${document.getElementById('notes').value || 'Creative & Gourmet'}
 
-      PHILOSOPHY:
-      1. Number every meal (e.g., Breakfast #1, Breakfast #2).
-      2. Use primary selections as foundation, suggest clever protein/flavor additions for metric elevated meals.
-      3. Compare recipe needs against my inventory quantities. Strictly use g, ml, kg.
-      
-      OUTPUT FORMAT (Start each meal with [RECIPE]):
+      OUTPUT FORMAT:
       [RECIPE]
-      ## [Meal Type] #[Number]: [Creative Recipe Title]
-      *Chef's Note: Brief explanation of pairing.*
-      - **Macros:** [Metric P/C/F/kcal]
-      ### 📋 Ingredients List
-      [Full metric quantities]
+      ## [Meal Type] Batch: [Recipe Title] (Serves X)
+      *Chef's Note: Why this dish stays delicious even after 2-3 days in the fridge.*
+      
+      - **Macros (Per Serving):** [Metric P/C/F/kcal]
+      
+      ### 📋 Ingredients List (Total for the Batch)
+      [Consolidated metric quantities for all portions]
+      
       ### 🔍 Inventory Audit
       - **✅ FROM YOUR FRIDGE:** [Items/qty used from inventory]
-      - **🛒 MARKET TRIP:** [Suggested additions or missing stock]
-      ### 🔪 Instructions
-      [Steps]
+      - **🛒 MARKET TRIP:** [Specific items needed to make this a 5-star prep dish]
+      
+      ### 🔪 Batch Prep Instructions
+      [Efficient steps to cook all portions at once]
     `;
 
+    try {
+      const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await res.json();
+      renderRecipes(d.content[0].text);
+      document.getElementById('overlay').style.display = 'flex';
+    } catch(e) { alert("API Error."); }
+    document.getElementById('loader').style.display = 'none';
+  }
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
         method: 'POST', 
