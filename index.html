@@ -178,30 +178,32 @@
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
     const prompt = `
-      System: Strategic Meal Architect (Claude Mode).
-      
-      CORE STRATEGY:
-      1. BATCH FOCUS: 1 high-quality recipe per type.
-      2. MACRO TARGETS (B/L/D): 
-         - Protein: Exactly ~30g.
-         - Fat: 10-15g (MUST be lower than protein).
-         - Carbs: 30-40g.
-      3. DESSERT GOAL: Low fat focus.
-      4. PORTION REALISM: If a meat portion (e.g. 300g Salmon) exceeds 30g protein, you MUST calculate and split it into multiple servings to fit the 30g target.
-      
-      CLAUDE MATH VERIFICATION:
-      - You must show internal rigor. Calculate: (P*4) + (C*4) + (F*9).
-      - Ensure calorie counts actually match ingredient weights.
+  System: Creative Culinary Architect.
+  
+  CORE MISSION:
+  - Create high-quality, professional recipes.
+  - PRIMARY FOCUS: You MUST incorporate the "Selected Ingredients" below. You do not need to use the entire quantity provided.
+  - CREATIVE FREEDOM: You ARE encouraged to suggest additional ingredients not found in the inventory (staples, aromatics, or specialty items) to ensure the dish is delicious and cohesive.
+  
+  MACRO GUIDELINES (Flexible):
+  - Target Protein: ~30g (Preferably 25g-35g).
+  - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
+  - Target Carbs: 30-40g.
+  
+  STRICT INVENTORY LOGIC:
+  - SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert.
+  - SAVORY BASE: Lunch and Dinner must be built around whole-food protein from the Selected Ingredients.
+  
+  INPUT DATA:
+  - Selected Ingredients (Required): [${sel.join(', ')}]
+  - Remaining Inventory (Available if needed): [${pantryContext}]
+  - Meal Count: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
+  - Additional Notes: ${document.getElementById('notes').value}
 
-      Volume: ${counts.breakfast}B, ${counts.lunch}L, ${counts.dinner}D, ${counts.dessert} Dessert.
-      Inventory: [${pantryContext}]
-      Priority: [${sel.join(', ')}]
-      Notes: ${document.getElementById('notes').value}
-
-      OUTPUT FORMATTING:
-      - Wrap every meal recipe in [RECIPE] tags.
-      - Start with: ### 🔍 Inventory Check
-    `;
+  OUTPUT:
+  - Wrap each recipe in [RECIPE] tags.
+  - Include a "Chef's Note" for each, explaining why you added specific external ingredients.
+`;
 
     try {
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
