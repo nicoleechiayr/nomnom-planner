@@ -113,9 +113,9 @@
   <div id="pantry-mount"></div>
 
   <div class="card">
-    <div class="section-title">Flavor Constraints</div>
-    <textarea id="notes" rows="2" placeholder="Anything else you want to include?"></textarea>
-  </div>
+  <!-- Changed label to be more inclusive of logistics -->
+  <div class="section-title">Special Instructions</div> 
+  <textarea id="notes" rows="2" placeholder="Exclusions, prep style, or flavor preferences..."></textarea>
 </div>
 
 <div class="bottom-bar">
@@ -202,8 +202,8 @@
 
   OUTPUT:
   - Wrap each recipe in [RECIPE] tags.
-  - Any ingredient NOT found in the "Selected Ingredients" or "Remaining Inventory" MUST be preceded by the prefix "**TO BUY:**".
-  - Include a "Chef's Note" explaining the logic behind these "TO BUY" choices.
+  - Any ingredient NOT found in the "Selected Ingredients" or "Remaining Inventory" must have the phrase "**To Buy:**" after ingredient is listed.
+  - Include a "Chef's Note" explaining the logic behind these "To Buy" choices.
 `;
 
     try {
