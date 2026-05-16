@@ -222,7 +222,11 @@
   function renderRecipes(text) {
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
+    
+    // DIAGNOSTIC LOGS
+    console.log("=== RAW TEXT FROM AI ===", text);
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
+    console.log("=== RECIPES PARSED ===", recipes.length);
     
     recipes.forEach((recipeText, index) => {
       const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
@@ -231,14 +235,14 @@
       div.className = 'recipe-card';
       const uniqueId = `save-${index}`;
       
-      // Create Save Button safely using memory references
+      // Memory-Safe Button Object Creation
       const saveBtn = document.createElement('button');
       saveBtn.className = 'save-btn';
       saveBtn.id = uniqueId;
       saveBtn.setAttribute('data-db-id', '');
       saveBtn.innerText = 'Save';
       
-      // Store variables cleanly inside element storage
+      // Store variables cleanly inside internal element dataset
       saveBtn.dataset.recipeContent = recipeText;
       saveBtn.dataset.mealName = mealName;
       
@@ -260,6 +264,8 @@
     const btn = document.getElementById(uniqueId);
     const id = btn.getAttribute('data-db-id');
     
+    console.log(`Save toggle triggered for ID: ${uniqueId}. DB Reference Status: ${id ? 'Exists' : 'New Insert'}`);
+
     if (!id) {
       try {
         const { data, error } = await client
