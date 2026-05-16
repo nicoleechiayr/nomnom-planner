@@ -241,25 +241,57 @@
   }
 
   async function handleSaveToggle(uniqueId, content, name) {
-    const btn = document.getElementById(uniqueId);
-    const id = btn.getAttribute('data-db-id');
-    
-    if (!id) {
-      const { data, error } = await client.from('history').insert([{ plan_text: content, meal_summary: name }]).select();
-      if (!error && data.length > 0) {
-        btn.innerText = "Unsave"; btn.classList.add('saved'); btn.setAttribute('data-db-id', data[0].id);
+  const btn = document.getElementById(uniqueId);
+  const id = btn.getAttribute('data-db-id');
+  
+  if (!id) {
+    try {
+      const { data, error } = await client
+        .from('history')
+        .insert([{ plan_text: content, meal_summary: name || 'Untitled Meal' }])
+        .select();
+
+      if (error) {
+        console.error("Supabase Insertion Error:", error);
+        alert(`Failed to save: ${error.message || JSON.stringify(error)}`);
+        return;
       }
-    } else {
+
+      // Safe evaluation check for data array response
+      if (data && Array.isArray(data) && data.length > 0) {
+        btn.innerText = "Unsave"; 
+        btn.classList.add('saved'); 
+        btn.setAttribute('data-db-id', data[0].id);
+      } else {
+        // Fallback catch if insert succeeded but row confirmation wasn't returned
+        console.warn("Row inserted, but no returning data payload received.", data);
+        btn.innerText = "Saved";
+        btn.classList.add('saved');
+      }
+    } catch (jsError) {
+      console.error("Client-side crash during save:", jsError);
+      alert(`Application Error: ${jsError.message}`);
+    }
+  } else {
+    try {
       const { error } = await client.from('history').delete().eq('id', id);
-      if (!error) { 
-        btn.innerText = "Save"; btn.classList.remove('saved'); btn.setAttribute('data-db-id', ''); 
-        if (uniqueId.startsWith('hist-')) {
-          btn.parentElement.style.opacity = '0.4';
-          btn.parentElement.style.pointerEvents = 'none';
-        }
+      if (error) {
+        alert(`Failed to unsave: ${error.message}`);
+        return;
       }
+      
+      btn.innerText = "Save"; 
+      btn.classList.remove('saved'); 
+      btn.setAttribute('data-db-id', ''); 
+      if (uniqueId.startsWith('hist-')) {
+        btn.parentElement.style.opacity = '0.4';
+        btn.parentElement.style.pointerEvents = 'none';
+      }
+    } catch (jsError) {
+      console.error("Client-side crash during delete:", jsError);
     }
   }
+}
 
   async function viewHistory() {
     document.getElementById('loader').style.display = 'flex';
