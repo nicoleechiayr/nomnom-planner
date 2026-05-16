@@ -201,9 +201,10 @@
   - Additional Notes: ${document.getElementById('notes').value}
 
   OUTPUT:
-  - Wrap each recipe in [RECIPE] tags.
-  - Any ingredient NOT found in the "Selected Ingredients" or "Remaining Inventory" must have the phrase "(To Buy)" after ingredient is listed.
-  - Include a "Chef's Note" explaining the logic behind these "To Buy" choices.
+  - You MUST wrap every single individual meal plan tightly inside opening and closing tags exactly like this: [RECIPE] ## Meal Name \\n Content [RECIPE]
+  - The very first line inside the [RECIPE] tags MUST be the meal name starting with "## ". Do not include any introductory sentences, conversational text, or blank lines before the "## " header.
+  - Any ingredient NOT found in the "Selected Ingredients" or "Remaining Inventory" must have the phrase "(To Buy)" after the ingredient is listed.
+  - Include a "Chef's Note" explaining the logic behind these "To Buy" choices at the very bottom of the recipe content.
 `;
 
     try {
@@ -223,7 +224,6 @@
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // DIAGNOSTIC LOGS
     console.log("=== RAW TEXT FROM AI ===", text);
     const recipes = text.split('[RECIPE]').filter(r => r.trim().length > 10);
     console.log("=== RECIPES PARSED ===", recipes.length);
@@ -242,7 +242,7 @@
       saveBtn.setAttribute('data-db-id', '');
       saveBtn.innerText = 'Save';
       
-      // Store variables cleanly inside internal element dataset
+      // Store data layers in dataset memory slots
       saveBtn.dataset.recipeContent = recipeText;
       saveBtn.dataset.mealName = mealName;
       
