@@ -136,7 +136,6 @@
   const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdteGJlYndubXVuZHB1dnN3Y2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODM0OTQsImV4cCI6MjA5MDc1OTQ5NH0.d8JTYA23pscN0Pt7MW4-_9LQ4XnsPv8TF9aoHoXVF3s';
   const client = supabase.createClient(S_URL, S_KEY);
 
-  // Simplified counts track array
   let counts = { breakfast: 0, mains: 0, dessert: 0 };
   let masterPantry = [];
 
@@ -200,11 +199,48 @@
   - Meal Count: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
   - Additional Notes: ${document.getElementById('notes').value}
 
-  OUTPUT:
+  OUTPUT STRUCTURE MANDATE:
   - You MUST wrap every single individual meal plan tightly inside opening and closing tags exactly like this: [RECIPE] ## Meal Name \\n Content [RECIPE]
   - The very first line inside the [RECIPE] tags MUST be the meal name starting with "## ". Do not include any introductory sentences, conversational text, or blank lines before the "## " header.
-  - Any ingredient NOT found in the "Selected Ingredients" or "Remaining Inventory" must have the phrase "(To Buy)" after the ingredient is listed.
-  - Include a "Chef's Note" explaining the logic behind these "To Buy" choices at the very bottom of the recipe content.
+  - Match the exact capitalization, structural headings, formatting rules, and style from the reference example below.
+
+  EXACT STRUCTURE REFERENCE EXAMPLE:
+  [RECIPE]
+  ## Korean-Style Kimchi Fried Rice with Prawns and Bok Choy
+
+  **Serves:** 1  
+  **Prep Time:** 10 minutes  
+  **Cook Time:** 15 minutes
+
+  **Ingredients:**
+  - 25g kimchi (from selected ingredients)
+  - 80g bok choy, chopped (from selected ingredients)
+  - 150g prawns
+  - 1 medium egg
+  - 1/2 brown onion, diced
+  - 1/2 cup cooked jasmine rice (To Buy)
+  - 2 green onions, sliced
+  - 1 tsp sesame oil (To Buy)
+  - 1 tsp soy sauce (To Buy)
+  - 1/2 tsp gochugaru
+  - 1 clove garlic, minced (To Buy)
+  - 1 tsp vegetable oil (To Buy)
+
+  **Instructions:**
+  1. Heat vegetable oil in a large wok or skillet over medium-high heat.
+  2. Add diced brown onion and garlic, stir-fry for 2 minutes until fragrant.
+  3. Add prawns and cook for 2-3 minutes until pink and cooked through.
+  4. Push prawns to one side, scramble the egg in the empty space.
+  5. Add cooked rice, breaking up any clumps, and stir-fry for 3-4 minutes.
+  6. Add kimchi and gochugaru, stir-fry for 2 minutes.
+  7. Add chopped bok choy stems first, then leaves, cooking until just wilted.
+  8. Drizzle with sesame oil and soy sauce, toss to combine.
+  9. Garnish with sliced green onions and serve immediately.
+
+  **Nutrition (Approximate):** 32g protein, 35g carbs, 12g fat
+
+  **Chef's Note:** Jasmine rice provides the perfect texture for fried rice and is essential for authentic Korean-style dishes. Sesame oil adds the signature nutty flavor that kimchi fried rice requires. Soy sauce and garlic are fundamental Asian pantry staples that enhance the umami profile. Vegetable oil is needed for proper high-heat stir-frying technique.
+  [RECIPE]
 `;
 
     try {
