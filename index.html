@@ -189,7 +189,11 @@
   - Target Protein: ~30g (Preferably 25g-35g).
   - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
   - Target Carbs: 30-40g.
-  
+
+  SPICE AND PANTRY LOGIC: 
+- If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
+- For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g) instead of the whole bottle.
+- Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs) unless explicitly stated otherwise by the user.
   
   STRICT INVENTORY LOGIC:
   - SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert.
