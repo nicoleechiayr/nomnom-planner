@@ -190,6 +190,19 @@
   - Target Protein: ~40g (Preferably 25g-35g).
   - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
   - Target Carbs: 30-40g, but can be more. 
+
+  NUTRITION CALCULATION MANDATE:
+  Before outputting the final Nutrition summary, you MUST perform a step-by-step mathematical breakdown for EVERY ingredient listed:
+  1. State the standard raw macro density per 100g/unit (e.g., 100g dry pasta = 70g carbs, 12g protein, 1.5g fat).
+  2. Multiply by the exact quantity used in the recipe.
+  3. Sum up the totals for Calories, Protein, Carbs, and Fat.
+  4. Output the final aggregated totals.
+  5. DO NOT list the calculation on screen. Simply perform this step at the backend and only show the user the overall macros. 
+  
+  Example thinking process:
+  1. Recipe states to use 150g angel hair pasta. 
+  2. 150g dry angel hair pasta = 1.5 * 71g carbs = 106.5g carbs
+  3. 115g of chicken breast = xxx protein (here you would use the USDA numbers)
  
   SPICE AND PANTRY LOGIC: 
 - If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
