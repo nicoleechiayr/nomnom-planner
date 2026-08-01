@@ -191,23 +191,10 @@
   - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
   - Target Carbs: 30-40g, but can be more. 
 
-  NUTRITION CALCULATION MANDATE:
-  Before outputting the final Nutrition summary, you MUST perform a step-by-step mathematical breakdown for EVERY ingredient listed:
-  1. State the standard raw macro density per 100g/unit (e.g., 100g dry pasta = 70g carbs, 12g protein, 1.5g fat).
-  2. Multiply by the exact quantity used in the recipe.
-  3. Sum up the totals for Calories, Protein, Carbs, and Fat.
-  4. Output the final aggregated totals.
-  5. DO NOT list the calculation on screen. Simply perform this step at the backend and only show the user the overall macros. 
-  
-  Example thinking process:
-  1. Recipe states to use 150g angel hair pasta. 
-  2. 150g dry angel hair pasta = 1.5 * 71g carbs = 106.5g carbs
-  3. 115g of chicken breast = xxx protein (here you would use the USDA numbers)
- 
   SPICE AND PANTRY LOGIC: 
-- If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
-- For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g) instead of the whole bottle.
-- Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs) unless explicitly stated otherwise by the user.
+  - If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
+  - For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g) instead of the whole bottle.
+  - Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs) unless explicitly stated otherwise by the user.
   
   STRICT INVENTORY LOGIC:
   - SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert.
@@ -219,13 +206,23 @@
   - Meal Count: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
   - Additional Notes: ${document.getElementById('notes').value}
 
-  OUTPUT STRUCTURE MANDATE:
-  - You MUST wrap every single individual meal plan tightly inside opening and closing tags exactly like this: [RECIPE] ## Meal Name \\n Content [RECIPE]
-  - The very first line inside the [RECIPE] tags MUST be the meal name starting with "## ". Do not include any introductory sentences, conversational text, or blank lines before the "## " header.
-  - Match the exact capitalization, structural headings, formatting rules, and style from the reference example below.
-  - If the user did not select specific ingredients on the ingredients page, do not mark it as "from selected ingredients". Label it as "from available ingredients".
-  
+  EXECUTION WORKFLOW MANDATE:
+  For EVERY meal requested, you must strictly follow this 2-step process in order:
+
+  STEP 1: THOUGHT PROCESS (Inside <thinking> tags)
+  Calculate the exact macros for each ingredient using dry/raw USDA density specs.
+  Multiply ingredient weight * macro density. Sum them up to get your final numbers.
+
+  STEP 2: OUTPUT STRUCTURAL MANDATE
+  AFTER the </thinking> tag, output the recipe wrapped strictly inside [RECIPE] tags.
+  Do not place any text outside of the <thinking> or [RECIPE] tags.
+
   EXACT STRUCTURE REFERENCE EXAMPLE:
+  <thinking>
+  150g dry angel hair pasta = 1.5 * 71g carbs = 106.5g carbs
+  115g chicken breast = 31g protein
+  Sum: 35g protein, 107g carbs, 8g fat
+  </thinking>
   [RECIPE]
   ## Korean-Style Kimchi Fried Rice with Prawns and Bok Choy
 
@@ -258,9 +255,9 @@
   8. Drizzle with sesame oil and soy sauce, toss to combine.
   9. Garnish with sliced green onions and serve immediately.
 
-  **Nutrition (Approximate):** 32g protein, 35g carbs, 12g fat
+  **Nutrition (Approximate):** 35g protein, 107g carbs, 8g fat
 
-  **Chef's Note:** Jasmine rice provides the perfect texture for fried rice and is essential for authentic Korean-style dishes. Sesame oil adds the signature nutty flavor that kimchi fried rice requires. Soy sauce and garlic are fundamental Asian pantry staples that enhance the umami profile. Vegetable oil is needed for proper high-heat stir-frying technique.
+  **Chef's Note:** Jasmine rice provides the perfect texture for fried rice and is essential for authentic Korean-style dishes.
   [RECIPE]
 `;
 
