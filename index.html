@@ -188,7 +188,7 @@ CORE MISSION:
 QUANTITY MANDATE:
 - YOU MUST GENERATE EXACTLY ${totalMeals} SEPARATE RECIPES IN TOTAL.
 - Target Breakdown: ${counts.breakfast} Breakfast recipe(s), ${counts.mains} Main Savory Meal recipe(s), ${counts.dessert} Dessert recipe(s).
-- Each recipe MUST be individually wrapped in its own set of [RECIPE] tags. Do NOT combine them into one block.
+- EACH RECIPE MUST BE INDIVIDUALLY WRAPPED IN ITS OWN STANDALONE PAIR OF [RECIPE] TAGS. Do NOT combine multiple recipes into one block.
 
 MACRO GUIDELINES (Flexible):
 When providing the summary, estimate the calories, protein, carbs, and fats based on standard USDA nutritional values for the given weights.
@@ -207,62 +207,47 @@ STRICT INVENTORY LOGIC:
 - SAVORY BASE: Main Meals must be built around whole-food protein from the Selected Ingredients.
 
 INPUT DATA:
-- TOTAL RECIPES REQUIRED: ${totalMeals}
+- TOTAL RECIPES REQUIRED TO GENERATE: ${totalMeals}
 - Meal Breakdown: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
 - Selected Ingredients (Required): [${sel.join(', ')}]
 - Remaining Inventory (Available if needed): [${pantryContext}]
 - Additional Notes: ${document.getElementById('notes').value}
 
-EXECUTION WORKFLOW FOR EACH RECIPE:
-For EVERY SINGLE recipe (totaling ${totalMeals}), execute this two-step process:
+EXECUTION WORKFLOW FOR EVERY SINGLE RECIPE:
+For EVERY recipe (repeat this sequence ${totalMeals} times), follow this format:
 
-STEP 1: THOUGHT PROCESS (Inside <thinking> tags)
-Calculate the exact macros for each ingredient using dry/raw USDA density specs before outputting the final total.
+STEP 1: THOUGHT PROCESS (Inside <thinking>...</thinking> tags)
+Calculate the exact macros for each ingredient using dry/raw USDA density specs before outputting the final total. Always close with </thinking>.
 
 STEP 2: OUTPUT STRUCTURAL MANDATE
-AFTER the </thinking> tag, output the recipe wrapped strictly inside [RECIPE] tags.
+AFTER the </thinking> tag, output the individual recipe wrapped strictly inside [RECIPE]...[RECIPE].
 
-EXAMPLE FORMAT (Repeat this sequence ${totalMeals} times):
+EXAMPLE OUTPUT FORMAT (Repeat ${totalMeals} times):
+
 <thinking>
 150g dry angel hair pasta = 106.5g carbs
 115g chicken breast = 31g protein
 Sum: 35g protein, 107g carbs, 8g fat
 </thinking>
 [RECIPE]
-## Korean-Style Kimchi Fried Rice with Prawns and Bok Choy
-
+## Recipe 1 Title
 **Serves:** 1  
 **Prep Time:** 10 minutes  
 **Cook Time:** 15 minutes
 
 **Ingredients:**
-- 25g kimchi (from selected ingredients)
-- 80g bok choy, chopped (from selected ingredients)
-- 150g prawns
-- 1 medium egg
-- 1/2 brown onion, diced
-- 1/2 cup cooked jasmine rice (To Buy)
-- 2 green onions, sliced
-- 1 tsp sesame oil (To Buy)
-- 1 tsp soy sauce (To Buy)
-- 1/2 tsp gochugaru
-- 1 clove garlic, minced (To Buy)
-- 1 tsp vegetable oil (To Buy)
-
+...
 **Instructions:**
-1. Heat vegetable oil in a large wok or skillet over medium-high heat.
-2. Add diced brown onion and garlic, stir-fry for 2 minutes until fragrant.
-3. Add prawns and cook for 2-3 minutes until pink and cooked through.
-4. Push prawns to one side, scramble the egg in the empty space.
-5. Add cooked rice, breaking up any clumps, and stir-fry for 3-4 minutes.
-6. Add kimchi and gochugaru, stir-fry for 2 minutes.
-7. Add chopped bok choy stems first, then leaves, cooking until just wilted.
-8. Drizzle with sesame oil and soy sauce, toss to combine.
-9. Garnish with sliced green onions and serve immediately.
-
+...
 **Nutrition (Approximate):** 35g protein, 107g carbs, 8g fat
+[RECIPE]
 
-**Chef's Note:** Jasmine rice provides the perfect texture for fried rice.
+<thinking>
+...
+</thinking>
+[RECIPE]
+## Recipe 2 Title
+...
 [RECIPE]`;
 
     try {
@@ -282,15 +267,28 @@ Sum: 35g protein, 107g carbs, 8g fat
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // Strips away hidden thinking calculations so they don't corrupt UI rendering
-    const cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
+    // 1. Strip out fully closed <thinking>...</thinking> tags
+    let cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+    
+    // 2. Safety Net: Strip any UNCLOSED <thinking> tags up to the first [RECIPE] tag
+    cleanedText = cleanedText.replace(/<thinking>[\s\S]*?(?=\[RECIPE\])/gi, '');
+    cleanedText = cleanedText.replace(/^[\s\S]*?(?=\[RECIPE\])/, '');
 
     console.log("=== RAW TEXT FROM AI ===", text);
-    const recipes = cleanedText.split('[RECIPE]').filter(r => r.trim().length > 10);
+    
+    // 3. Split into blocks and filter out empty text
+    const rawBlocks = cleanedText.split('[RECIPE]').map(r => r.trim()).filter(r => r.length > 20);
+    
+    // 4. Ensure each block is a valid recipe (must contain '##' title header or 'Serves:')
+    const recipes = rawBlocks.filter(block => block.includes('##') || block.includes('Serves:'));
+    
     console.log("=== RECIPES PARSED ===", recipes.length);
     
     recipes.forEach((recipeText, index) => {
-      const mealName = recipeText.trim().split('\n')[0].replace('##', '').trim();
+      // Extract title safely
+      const lines = recipeText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const titleLine = lines.find(l => l.startsWith('##')) || lines[0] || 'Recipe';
+      const mealName = titleLine.replace(/^##\s*/, '').trim();
       
       const div = document.createElement('div');
       div.className = 'recipe-card';
