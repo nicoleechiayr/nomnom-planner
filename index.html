@@ -171,7 +171,9 @@
 
   async function generate() {
     const sel = Array.from(document.querySelectorAll('.chip.selected')).map(c => c.innerText.split(' (')[0]);
-    if (Object.values(counts).reduce((a, b) => a + b, 0) === 0) return alert("Select meal counts.");
+    const totalMeals = Object.values(counts).reduce((a, b) => a + b, 0);
+    
+    if (totalMeals === 0) return alert("Select meal counts.");
     
     document.getElementById('loader').style.display = 'flex';
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
@@ -183,16 +185,21 @@ CORE MISSION:
 - PRIMARY FOCUS: You MUST incorporate the "Selected Ingredients" below. You do not need to use the entire quantity provided.
 - CREATIVE FREEDOM: You ARE encouraged to suggest additional ingredients not found in the inventory (staples, aromatics, or specialty items) to ensure the dish is delicious and cohesive.
 
+QUANTITY MANDATE:
+- YOU MUST GENERATE EXACTLY ${totalMeals} SEPARATE RECIPES IN TOTAL.
+- Target Breakdown: ${counts.breakfast} Breakfast recipe(s), ${counts.mains} Main Savory Meal recipe(s), ${counts.dessert} Dessert recipe(s).
+- Each recipe MUST be individually wrapped in its own set of [RECIPE] tags. Do NOT combine them into one block.
+
 MACRO GUIDELINES (Flexible):
 When providing the summary, estimate the calories, protein, carbs, and fats based on standard USDA nutritional values for the given weights.
-Calculate all rice/pasta/grain weights assuming DRY mass. For example, if the recipe you come up with has 100g of angel hair pasta, first check what the standard macros are for 1g of aangel hair pasta, then multiply by 100 (or the weight) to get the macronutrient value.
+Calculate all rice/pasta/grain weights assuming DRY mass. For example, if the recipe has 100g of angel hair pasta, check standard raw macros per 1g and multiply by 100.
 - Target Protein: ~40g
 - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
-- Target Carbs: 30-40g, but can be more, up till 70g. 
+- Target Carbs: 30-40g, but can be more, up to 70g.
 
 SPICE AND PANTRY LOGIC: 
-- If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
-- For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g) instead of the whole bottle.
+- If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning, save "1 bottle" to the database quantity field.
+- For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g).
 - Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs).
 
 STRICT INVENTORY LOGIC:
@@ -200,13 +207,27 @@ STRICT INVENTORY LOGIC:
 - SAVORY BASE: Main Meals must be built around whole-food protein from the Selected Ingredients.
 
 INPUT DATA:
+- TOTAL RECIPES REQUIRED: ${totalMeals}
+- Meal Breakdown: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
 - Selected Ingredients (Required): [${sel.join(', ')}]
 - Remaining Inventory (Available if needed): [${pantryContext}]
-- Meal Count: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
 - Additional Notes: ${document.getElementById('notes').value}
 
-OUTPUT STRUCTURE:
+EXECUTION WORKFLOW FOR EACH RECIPE:
+For EVERY SINGLE recipe (totaling ${totalMeals}), execute this two-step process:
 
+STEP 1: THOUGHT PROCESS (Inside <thinking> tags)
+Calculate the exact macros for each ingredient using dry/raw USDA density specs before outputting the final total.
+
+STEP 2: OUTPUT STRUCTURAL MANDATE
+AFTER the </thinking> tag, output the recipe wrapped strictly inside [RECIPE] tags.
+
+EXAMPLE FORMAT (Repeat this sequence ${totalMeals} times):
+<thinking>
+150g dry angel hair pasta = 106.5g carbs
+115g chicken breast = 31g protein
+Sum: 35g protein, 107g carbs, 8g fat
+</thinking>
 [RECIPE]
 ## Korean-Style Kimchi Fried Rice with Prawns and Bok Choy
 
@@ -241,7 +262,7 @@ OUTPUT STRUCTURE:
 
 **Nutrition (Approximate):** 35g protein, 107g carbs, 8g fat
 
-**Chef's Note:** Jasmine rice provides the perfect texture for fried rice and is essential for authentic Korean-style dishes.
+**Chef's Note:** Jasmine rice provides the perfect texture for fried rice.
 [RECIPE]`;
 
     try {
