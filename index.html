@@ -185,15 +185,15 @@ CORE MISSION:
 
 MACRO GUIDELINES (Flexible):
 When providing the summary, estimate the calories, protein, carbs, and fats based on standard USDA nutritional values for the given weights.
-Calculate all rice/pasta/grain weights assuming DRY mass unless explicitly stated otherwise.
-- Target Protein: ~40g (Preferably 25g-35g).
+Calculate all rice/pasta/grain weights assuming DRY mass. For example, if the recipe you come up with has 100g of angel hair pasta, first check what the standard macros are for 1g of aangel hair pasta, then multiply by 100 (or the weight) to get the macronutrient value.
+- Target Protein: ~40g
 - Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
-- Target Carbs: 30-40g, but can be more.
+- Target Carbs: 30-40g, but can be more, up till 70g. 
 
 SPICE AND PANTRY LOGIC: 
 - If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning (e.g., Garam Masala, Gochugaru, Cumin, Turmeric), save "1 bottle" to the database quantity field.
 - For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g) instead of the whole bottle.
-- Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs) unless explicitly stated otherwise by the user.
+- Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs).
 
 STRICT INVENTORY LOGIC:
 - SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert.
@@ -205,23 +205,8 @@ INPUT DATA:
 - Meal Count: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
 - Additional Notes: ${document.getElementById('notes').value}
 
-EXECUTION WORKFLOW MANDATE:
-For EVERY meal requested, you must strictly follow this 2-step process in order:
+OUTPUT STRUCTURE:
 
-STEP 1: THOUGHT PROCESS (Inside <thinking> tags)
-Calculate the exact macros for each ingredient using dry/raw USDA density specs.
-Multiply ingredient weight * macro density. Sum them up to get your final numbers.
-
-STEP 2: OUTPUT STRUCTURAL MANDATE
-AFTER the </thinking> tag, output the recipe wrapped strictly inside [RECIPE] tags.
-Do not place any text outside of the <thinking> or [RECIPE] tags.
-
-EXACT STRUCTURE REFERENCE EXAMPLE:
-<thinking>
-150g dry angel hair pasta = 1.5 * 71g carbs = 106.5g carbs
-115g chicken breast = 31g protein
-Sum: 35g protein, 107g carbs, 8g fat
-</thinking>
 [RECIPE]
 ## Korean-Style Kimchi Fried Rice with Prawns and Bok Choy
 
