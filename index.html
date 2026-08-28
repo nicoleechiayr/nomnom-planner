@@ -258,47 +258,74 @@ Sum: 35g protein, 107g carbs, 8g fat
 [RECIPE]`;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+
       const res = await fetch('https://nomnom-api.nicoleechia.workers.dev', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`Worker HTTP ${res.status}: ${errBody}`);
+      }
+
       const d = await res.json();
-      const text = d.content?.[0]?.text || d.choices?.[0]?.message?.content || d.reply || d.message;
-if (!text) {
-  alert("API Error or empty response: " + JSON.stringify(d));
-} else {
-  renderRecipes(text);
-  document.getElementById('overlay').style.display = 'flex';
-}
+      console.log("=== WORKER RESPONSE ===", d);
+
+      const text = d.content?.[0]?.text || d.choices?.[0]?.message?.content || d.reply || d.message || (typeof d === 'string' ? d : null);
+
+      if (!text) {
+        throw new Error("Worker returned an empty or unparseable JSON payload: " + JSON.stringify(d));
+      }
+
+      renderRecipes(text);
       document.getElementById('overlay').style.display = 'flex';
-    } catch(e) { console.error(e); }
-    document.getElementById('loader').style.display = 'none';
+
+    } catch(e) { 
+      console.error("GENERATE ERROR:", e); 
+      const container = document.getElementById('recipe-container');
+      container.innerHTML = `
+        <div class="recipe-card" style="border-color: #d9534f; background: #fdf7f7;">
+          <h3 style="color: #d9534f; margin-bottom: 8px;">Generation Error</h3>
+          <p style="font-size:0.85rem; color: #333; word-break: break-word;">${e.message || e}</p>
+        </div>`;
+      document.getElementById('overlay').style.display = 'flex';
+    } finally {
+      document.getElementById('loader').style.display = 'none';
+    }
   }
 
   function renderRecipes(text) {
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // 1. Strip out fully closed <thinking>...</thinking> tags
+    // Strip out thinking tags
     let cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
-    
-    // 2. Safety Net: Strip any UNCLOSED <thinking> tags up to the first [RECIPE] tag
     cleanedText = cleanedText.replace(/<thinking>[\s\S]*?(?=\[RECIPE\])/gi, '');
-    cleanedText = cleanedText.replace(/^[\s\S]*?(?=\[RECIPE\])/, '');
 
-    console.log("=== RAW TEXT FROM AI ===", text);
-    
-    // 3. Split into blocks and filter out empty text
-    const rawBlocks = cleanedText.split('[RECIPE]').map(r => r.trim()).filter(r => r.length > 20);
-    
-    // 4. Ensure each block is a valid recipe (must contain '##' title header or 'Serves:')
-    const recipes = rawBlocks.filter(block => block.includes('##') || block.includes('Serves:'));
-    
-    console.log("=== RECIPES PARSED ===", recipes.length);
-    
-    recipes.forEach((recipeText, index) => {
-      // Extract title safely
+    // 1. Try primary split using [RECIPE] tags
+    let rawBlocks = cleanedText.split('[RECIPE]').map(r => r.trim()).filter(r => r.length > 20);
+
+    // 2. Fallback: If AI didn't use [RECIPE] tags, split by Markdown Headers (##)
+    if (rawBlocks.length === 0 && cleanedText.includes('##')) {
+      rawBlocks = cleanedText.split(/(?=##\s)/g).map(r => r.trim()).filter(r => r.length > 20);
+    }
+
+    // 3. Fallback: If no headers were used, render the entire raw output
+    if (rawBlocks.length === 0) {
+      const div = document.createElement('div');
+      div.className = 'recipe-card';
+      div.innerHTML = `<div style="white-space: pre-wrap; font-size: 0.9rem;">${cleanedText.trim()}</div>`;
+      container.appendChild(div);
+      return;
+    }
+
+    rawBlocks.forEach((recipeText, index) => {
       const lines = recipeText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       const titleLine = lines.find(l => l.startsWith('##')) || lines[0] || 'Recipe';
       const mealName = titleLine.replace(/^##\s*/, '').trim();
@@ -333,8 +360,6 @@ if (!text) {
   async function handleSaveToggle(uniqueId, content, name) {
     const btn = document.getElementById(uniqueId);
     const id = btn.getAttribute('data-db-id');
-    
-    console.log(`Save toggle triggered for ID: ${uniqueId}. DB Reference Status: ${id ? 'Exists' : 'New Insert'}`);
 
     if (!id) {
       try {
@@ -344,7 +369,6 @@ if (!text) {
           .select();
 
         if (error) {
-          console.error("Supabase Insertion Error:", error);
           alert(`Failed to save: ${error.message || JSON.stringify(error)}`);
           return;
         }
@@ -354,12 +378,10 @@ if (!text) {
           btn.classList.add('saved'); 
           btn.setAttribute('data-db-id', data[0].id);
         } else {
-          console.warn("Row inserted, but no returning data payload received.", data);
           btn.innerText = "Saved";
           btn.classList.add('saved');
         }
       } catch (jsError) {
-        console.error("Client-side crash during save:", jsError);
         alert(`Application Error: ${jsError.message}`);
       }
     } else {
