@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    connect-src 'self' https://nomnom-api.nicoleechia.workers.dev https://gmxbebwnmundpuvswcku.supabase.co; 
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+    font-src 'self' https://fonts.gstatic.com;
+  ">
   <title>NomNom Planner</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght=400;600&display=swap" rel="stylesheet"/>
