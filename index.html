@@ -257,7 +257,13 @@ Sum: 35g protein, 107g carbs, 8g fat
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const d = await res.json();
-      renderRecipes(d.content[0].text);
+      const text = d.content?.[0]?.text || d.choices?.[0]?.message?.content || d.reply || d.message;
+if (!text) {
+  alert("API Error or empty response: " + JSON.stringify(d));
+} else {
+  renderRecipes(text);
+  document.getElementById('overlay').style.display = 'flex';
+}
       document.getElementById('overlay').style.display = 'flex';
     } catch(e) { console.error(e); }
     document.getElementById('loader').style.display = 'none';
