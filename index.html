@@ -260,7 +260,7 @@ EXAMPLE OUTPUT FORMAT:
 **Instructions:**
 ...
 **Nutrition (Approximate):** 40g protein, 106g carbs, 10g fat
-[/RECIPE]
+[/RECIPE]`;
 
     try {
       const controller = new AbortController();
@@ -309,8 +309,8 @@ EXAMPLE OUTPUT FORMAT:
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // Pattern to match pairs of <thinking>...</thinking> and [RECIPE]...[RECIPE]
-    const pairRegex = /(?:<thinking>([\s\S]*?)<\/thinking>[\s\r\n]*)?\[RECIPE\]([\s\S]*?)\[RECIPE\]/gi;
+    // Pattern to match pairs of <thinking>...</thinking> and [RECIPE]...[/RECIPE]
+    const pairRegex = /(?:<thinking>([\s\S]*?)<\/thinking>[\s\r\n]*)?\[RECIPE\]([\s\S]*?)\[\/RECIPE\]/gi;
     let match;
     let index = 0;
     let foundMatches = false;
