@@ -96,10 +96,14 @@
       position: absolute; top: 16px; right: 16px;
       background: #fff; border: 1px solid var(--accent); color: var(--accent);
       padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.7rem;
+      z-index: 10;
     }
     .save-btn.saved { background: var(--accent); color: #fff; border-color: transparent; }
 
     .loader { display: none; position: fixed; inset: 0; z-index: 2000; background: var(--bg); align-items: center; justify-content: center; font-weight: 600; color: var(--accent); }
+
+    details summary::-webkit-details-marker { display: inline-block; }
+    details[open] summary { margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -185,12 +189,13 @@
     document.getElementById('loader').style.display = 'flex';
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
-    const prompt = `System: Creative Culinary Architect.
+    const prompt = `System: Creative Culinary Architect & Macro Specialist.
 
 CORE MISSION:
-- Create high-quality, professional recipes.
+- Create high-quality, diverse, professional recipes within strict nutritional parameters.
 - PRIMARY FOCUS: You MUST incorporate the "Selected Ingredients" below. You do not need to use the entire quantity provided.
-- CREATIVE FREEDOM: You ARE encouraged to suggest additional ingredients not found in the inventory (staples, aromatics, or specialty items) to ensure the dish is delicious and cohesive.
+- CREATIVE FREEDOM: Suggest additional ingredients (staples, aromatics, spices, specialty items) to ensure dishes are cohesive, vibrant, and authentic.
+- MANDATORY CUISINE DIVERSITY: Avoid generic stir-fries, plain baked proteins, or basic pasta dishes. Unless user notes specify otherwise, actively rotate through distinct regional sub-cuisines (e.g., Sichuan, Levantine, Oaxacan, Sicilian, West African, South Indian, Basque, Thai, Maghrebi).
 
 QUANTITY MANDATE:
 - YOU MUST GENERATE EXACTLY ${totalMeals} SEPARATE RECIPES IN TOTAL.
@@ -198,20 +203,18 @@ QUANTITY MANDATE:
 - EACH RECIPE MUST BE INDIVIDUALLY WRAPPED IN ITS OWN STANDALONE PAIR OF [RECIPE] TAGS. Do NOT combine multiple recipes into one block.
 
 MACRO GUIDELINES (Flexible):
-When providing the summary, estimate the calories, protein, carbs, and fats based on standard USDA nutritional values for the given weights.
-Calculate all rice/pasta/grain weights assuming DRY mass. For example, if the recipe has 100g of angel hair pasta, check standard raw macros per 1g and multiply by 100.
-- Target Protein: ~40g
-- Target Fat: 10-15g (Flexible, but keep protein as the primary macro).
-- Target Carbs: 30-40g, but can be more, up to 70g.
+Estimate calories, protein, carbs, and fats based on standard USDA nutritional values for given weights.
+Calculate all rice/pasta/grain weights assuming DRY mass.
+- Target Protein: ~40g (Primary focus)
+- Target Fat: 10-15g
+- Target Carbs: 30-40g (up to 70g acceptable)
 
 SPICE AND PANTRY LOGIC: 
-- If the user logs an inventory item as "1 bottle" or "1 jar" of a dry spice/seasoning, save "1 bottle" to the database quantity field.
-- For the meal's macro calculation, automatically assume a standard single-cooking usage of 1 teaspoon (~5g).
-- Treat dry spices as macro-negligible (0g Protein, 0g Fat, negligible Carbs).
+- 1 bottle/jar dry spice = standard 1 tsp (~5g) usage in calculations (macro-negligible).
 
 STRICT INVENTORY LOGIC:
 - SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert.
-- SAVORY BASE: Main Meals must be built around whole-food protein from the Selected Ingredients.
+- SAVORY BASE: Main Meals must be built around whole-food protein from Selected Ingredients.
 
 INPUT DATA:
 - TOTAL RECIPES REQUIRED TO GENERATE: ${totalMeals}
@@ -221,17 +224,20 @@ INPUT DATA:
 - Additional Notes: ${document.getElementById('notes').value}
 
 EXECUTION WORKFLOW FOR EVERY SINGLE RECIPE:
-For EVERY recipe (repeat this sequence ${totalMeals} times), follow this format:
+For EVERY recipe (repeat sequence ${totalMeals} times):
 
 STEP 1: THOUGHT PROCESS (Inside <thinking>...</thinking> tags)
-Calculate the exact macros for each ingredient using dry/raw USDA density specs before outputting the final total. Always close with </thinking>.
+- Pick a specific regional sub-cuisine and signature technique.
+- Calculate exact dry/raw USDA macros per ingredient to hit targets.
+- YOU MUST CLOSE THE THINKING BLOCK WITH </thinking> BEFORE OUTPUTTING THE RECIPE.
 
 STEP 2: OUTPUT STRUCTURAL MANDATE
 AFTER the </thinking> tag, output the individual recipe wrapped strictly inside [RECIPE]...[RECIPE].
 
-EXAMPLE OUTPUT FORMAT (Repeat ${totalMeals} times):
+EXAMPLE OUTPUT FORMAT:
 
 <thinking>
+Cuisine Target: Levantine
 150g dry angel hair pasta = 106.5g carbs
 115g chicken breast = 31g protein
 Sum: 35g protein, 107g carbs, 8g fat
@@ -247,14 +253,6 @@ Sum: 35g protein, 107g carbs, 8g fat
 **Instructions:**
 ...
 **Nutrition (Approximate):** 35g protein, 107g carbs, 8g fat
-[RECIPE]
-
-<thinking>
-...
-</thinking>
-[RECIPE]
-## Recipe 2 Title
-...
 [RECIPE]`;
 
     try {
@@ -304,57 +302,91 @@ Sum: 35g protein, 107g carbs, 8g fat
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // Strip out thinking tags
-    let cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
-    cleanedText = cleanedText.replace(/<thinking>[\s\S]*?(?=\[RECIPE\])/gi, '');
+    // Pattern to match pairs of <thinking>...</thinking> and [RECIPE]...[RECIPE]
+    const pairRegex = /(?:<thinking>([\s\S]*?)<\/thinking>[\s\r\n]*)?\[RECIPE\]([\s\S]*?)\[RECIPE\]/gi;
+    let match;
+    let index = 0;
+    let foundMatches = false;
 
-    // 1. Try primary split using [RECIPE] tags
-    let rawBlocks = cleanedText.split('[RECIPE]').map(r => r.trim()).filter(r => r.length > 20);
+    while ((match = pairRegex.exec(text)) !== null) {
+      foundMatches = true;
+      const thinkingText = match[1] ? match[1].trim() : null;
+      const recipeText = match[2].trim();
 
-    // 2. Fallback: If AI didn't use [RECIPE] tags, split by Markdown Headers (##)
-    if (rawBlocks.length === 0 && cleanedText.includes('##')) {
-      rawBlocks = cleanedText.split(/(?=##\s)/g).map(r => r.trim()).filter(r => r.length > 20);
+      createRecipeCard(container, recipeText, thinkingText, index);
+      index++;
     }
 
-    // 3. Fallback: If no headers were used, render the entire raw output
-    if (rawBlocks.length === 0) {
-      const div = document.createElement('div');
-      div.className = 'recipe-card';
-      div.innerHTML = `<div style="white-space: pre-wrap; font-size: 0.9rem;">${cleanedText.trim()}</div>`;
-      container.appendChild(div);
-      return;
-    }
+    // Fallback: If [RECIPE] tags were omitted, fall back to header splitting
+    if (!foundMatches) {
+      let cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').trim();
+      let rawBlocks = [];
 
-    rawBlocks.forEach((recipeText, index) => {
-      const lines = recipeText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      const titleLine = lines.find(l => l.startsWith('##')) || lines[0] || 'Recipe';
-      const mealName = titleLine.replace(/^##\s*/, '').trim();
+      if (cleanedText.includes('##')) {
+        rawBlocks = cleanedText.split(/(?=##\s)/g).map(r => r.trim()).filter(r => r.length > 20);
+      }
+
+      if (rawBlocks.length > 0) {
+        rawBlocks.forEach((recipeText, i) => {
+          createRecipeCard(container, recipeText, null, i);
+        });
+      } else {
+        const div = document.createElement('div');
+        div.className = 'recipe-card';
+        div.innerHTML = `<div style="white-space: pre-wrap; font-size: 0.9rem;">${cleanedText}</div>`;
+        container.appendChild(div);
+      }
+    }
+  }
+
+  function createRecipeCard(container, recipeText, thinkingText, index) {
+    const lines = recipeText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const titleLine = lines.find(l => l.startsWith('##')) || lines[0] || 'Recipe';
+    const mealName = titleLine.replace(/^##\s*/, '').trim();
+    
+    const div = document.createElement('div');
+    div.className = 'recipe-card';
+    const uniqueId = `save-${index}`;
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn';
+    saveBtn.id = uniqueId;
+    saveBtn.setAttribute('data-db-id', '');
+    saveBtn.innerText = 'Save';
+    
+    saveBtn.dataset.recipeContent = recipeText;
+    saveBtn.dataset.mealName = mealName;
+    
+    saveBtn.onclick = function() {
+      handleSaveToggle(uniqueId, this.dataset.recipeContent, this.dataset.mealName);
+    };
+
+    div.appendChild(saveBtn);
+    
+    // Add Expandable Thinking Block if available
+    if (thinkingText) {
+      const details = document.createElement('details');
+      details.style.cssText = "margin-bottom: 12px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid var(--border);";
       
-      const div = document.createElement('div');
-      div.className = 'recipe-card';
-      const uniqueId = `save-${index}`;
+      const summary = document.createElement('summary');
+      summary.style.cssText = "cursor: pointer; font-weight: 600; font-size: 0.8rem; color: var(--accent); user-select: none;";
+      summary.innerText = "🔍 View Macro & Culinary Calculation";
       
-      const saveBtn = document.createElement('button');
-      saveBtn.className = 'save-btn';
-      saveBtn.id = uniqueId;
-      saveBtn.setAttribute('data-db-id', '');
-      saveBtn.innerText = 'Save';
-      
-      saveBtn.dataset.recipeContent = recipeText;
-      saveBtn.dataset.mealName = mealName;
-      
-      saveBtn.onclick = function() {
-        handleSaveToggle(uniqueId, this.dataset.recipeContent, this.dataset.mealName);
-      };
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = "white-space: pre-wrap; font-size: 0.9rem;";
-      contentDiv.innerText = recipeText.trim();
-      
-      div.appendChild(saveBtn);
-      div.appendChild(contentDiv);
-      container.appendChild(div);
-    });
+      const thinkingPre = document.createElement('pre');
+      thinkingPre.style.cssText = "white-space: pre-wrap; font-size: 0.8rem; margin-top: 8px; color: #444; font-family: inherit;";
+      thinkingPre.innerText = thinkingText;
+
+      details.appendChild(summary);
+      details.appendChild(thinkingPre);
+      div.appendChild(details);
+    }
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = "white-space: pre-wrap; font-size: 0.9rem;";
+    contentDiv.innerText = recipeText.trim();
+    
+    div.appendChild(contentDiv);
+    container.appendChild(div);
   }
 
   async function handleSaveToggle(uniqueId, content, name) {
