@@ -227,6 +227,28 @@ EXECUTION WORKFLOW FOR EVERY SINGLE RECIPE:
 For EVERY recipe (repeat sequence ${totalMeals} times):
 
 STEP 1: THOUGHT PROCESS (Inside <thinking>...</thinking> tags)
+Keep thinking CONCISE (max 4-5 bullet points total).
+1. Cuisine & Technique selected.
+2. Macro breakdown summary (Key protein, carb, and fat drivers).
+3. Final estimated total macros.
+YOU MUST CLOSE WITH </thinking> BEFORE STARTING [RECIPE].
+
+STEP 2: OUTPUT STRUCTURAL MANDATE
+AFTER the </thinking> tag, output the recipe strictly inside [RECIPE]...[RECIPE].
+
+EXAMPLE OUTPUT FORMAT:
+
+<thinking>
+- Cuisine Target: Levantine (Garlic-lemon sumac chicken)
+- Macros: Chicken breast (31g P), Pasta (106g C), Olive oil (8g F)
+- Total: 35g protein, 107g carbs, 8g fat
+</thinking>
+[RECIPE]
+## Recipe Title
+...
+[RECIPE]
+
+STEP 1: THOUGHT PROCESS (Inside <thinking>...</thinking> tags)
 - Pick a specific regional sub-cuisine and signature technique.
 - Calculate exact dry/raw USDA macros per ingredient to hit targets.
 - YOU MUST CLOSE THE THINKING BLOCK WITH </thinking> BEFORE OUTPUTTING THE RECIPE.
