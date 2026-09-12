@@ -150,11 +150,11 @@
   let counts = { breakfast: 0, mains: 0, dessert: 0 };
   let masterPantry = [];
 
-  function adj(t, d) {
+  window.adj = function(t, d) {
     counts[t] = Math.max(0, counts[t] + d);
     document.getElementById(`v-${t}`).innerText = counts[t];
     document.getElementById('tot').innerText = Object.values(counts).reduce((a, b) => a + b, 0);
-  }
+  };
 
   async function init() {
     const { data } = await client.from('inventory').select('*');
@@ -189,40 +189,28 @@
     document.getElementById('loader').style.display = 'flex';
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
-  const allCuisines = [
-  // East & Southeast Asia
-  "Sichuan", "Cantonese", "Hunan", "Shaanxi", "Yunnan", "Guizhou", "Xinjiang", 
-  "Taiwanese", "Teochew", "Hakka", "Hokkien", "Isan", "Northern Thai", 
-  "Southern Thai", "Peranakan", "Javanese", "Balinese", "Minangkabau", 
-  "Sundanese", "Korean", "Okinawan", "Vietnamese (Central/Hue)", "Burmese", "Filipino",
-
-  // South Asia
-  "Kerala", "Goan", "Bengali", "Sri Lankan", "Mughlai", 
-  "Hyderabadi", "Gujarati", "Rajasthani", "Kashmiri", "Punjabi", "Maharashtrian",
-
-  // Middle East & Central Asia
-  "Levantine", "Maghrebi", "Persian", "Anatolian", "Yemeni", "Georgian", 
-  "Uzbek", "Kurdish", "Armenian", "Lebanese", "Palestinian", "Moroccan", "Tunisian",
-
-  // Europe & Mediterranean
-  "Sicilian", "Tuscan", "Neapolitan", "Emilia-Romagna", "Pugliese", "Basque", 
-  "Catalan", "Andalusian", "Galician", "Provencal", "Cretan", "Hungarian", "Bavarian",
-
-  // Americas & Caribbean
-  "Oaxacan", "Yucatecan", "Poblano", "Peruvian", "Bahian", "Jamaican", 
-  "Trinidadian", "Cajun", "Creole", "Cuban", "Colombian", "Lowcountry", "Tex-Mex",
-
-  // Africa
-  "West African", "Ethiopian", "Swahili Coast", "Cape Malay", "Nigerian", 
-  "Senegalese", "Ghanaian", "Eritrean"
-];
+    const allCuisines = [
+      "Sichuan", "Cantonese", "Hunan", "Shaanxi", "Yunnan", "Guizhou", "Xinjiang", 
+      "Taiwanese", "Teochew", "Hakka", "Hokkien", "Isan", "Northern Thai", 
+      "Southern Thai", "Peranakan", "Javanese", "Balinese", "Minangkabau", 
+      "Sundanese", "Korean", "Okinawan", "Vietnamese (Central/Hue)", "Burmese", "Filipino",
+      "Kerala", "Goan", "Bengali", "Sri Lankan", "Mughlai", 
+      "Hyderabadi", "Gujarati", "Rajasthani", "Kashmiri", "Punjabi", "Maharashtrian",
+      "Levantine", "Maghrebi", "Persian", "Anatolian", "Yemeni", "Georgian", 
+      "Uzbek", "Kurdish", "Armenian", "Lebanese", "Palestinian", "Moroccan", "Tunisian",
+      "Sicilian", "Tuscan", "Neapolitan", "Emilia-Romagna", "Pugliese", "Basque", 
+      "Catalan", "Andalusian", "Galician", "Provencal", "Cretan", "Hungarian", "Bavarian",
+      "Oaxacan", "Yucatecan", "Poblano", "Peruvian", "Bahian", "Jamaican", 
+      "Trinidadian", "Cajun", "Creole", "Cuban", "Colombian", "Lowcountry", "Tex-Mex",
+      "West African", "Ethiopian", "Swahili Coast", "Cape Malay", "Nigerian", 
+      "Senegalese", "Ghanaian", "Eritrean"
+    ];
 
     const selectedCuisines = allCuisines
-  .sort(() => 0.5 - Math.random())
-  .slice(0, 3)
-  .join(", ");
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 3)
+      .join(", ");
 
-    
     const prompt = `Role: Culinary Architect & Macro Specialist.
 
 Task: Generate EXACTLY ${totalMeals} standalone, single-serving recipe(s) matching this breakdown:
@@ -237,35 +225,17 @@ Strict Rules:
 4. INVENTORY LOGIC: Protein powders, oats, and sweet syrups are allowed ONLY in Breakfast/Dessert. Mains must use whole-food proteins.
 5. MACROS (per meal): ~40g Protein, 10-15g Fat, 30-40g Carbs (Grains measured DRY).
 6. SPECIAL NOTES: ${document.getElementById('notes').value}
-7. You MUST incorporate the user selected ingredients. You do not need to use the entire quantity provided, and are encouraged to suggest additional staples, aromatics, spices, or specialty items for cohesion and authenticity. Add a "(To Buy)" in the output in case user has to purchase this ingredient.
+7. INGREDIENT FLEXIBILITY: You MUST incorporate selected ingredients. You do not need to use the entire quantity provided, and are encouraged to suggest additional staples, aromatics, spices, or specialty items for cohesion and authenticity. Append "(to buy)" to any ingredient the user needs to purchase.
 
-Output Format (Repeat EXACTLY ${totalMeals} times):
-
-<thinking>
-- Recipe [X] of ${totalMeals} (Type: [Breakfast/Main/Dessert])
-- Cuisine & Raw Weights
-- Macro Math: Protein (Xg) + Carbs (Yg) + Fat (Zg)
-</thinking>
-[RECIPE]
-## Recipe Title
-**Serves:** 1  
-**Prep Time:** X mins | **Cook Time:** Y mins
-
-**Ingredients:**
-- ...
-**Instructions:**
-- ...
-**Nutrition:** Xg protein, Yg carbs, Zg fat
-[/RECIPE]`;
-    
 EXECUTION WORKFLOW FOR EVERY SINGLE RECIPE:
-For EVERY recipe (repeat sequence ${totalMeals} times):
+For EVERY recipe (repeat sequence EXACTLY ${totalMeals} times):
 
 STEP 1: THOUGHT PROCESS (Inside <thinking>...</thinking> tags)
 Keep thinking CONCISE (max 4-5 bullet points total).
-1. Cuisine & Technique.
-2. Ingredient Weights: Define the EXACT raw/dry weights. You MUST use these exact weights in the recipe instructions below.
-3. Macro Math: Write out the addition equation to prove your math (e.g., Protein: 25g + 10g = 35g). Use strict USDA raw/dry values.
+1. Progress: "Generating Recipe X of ${totalMeals} (Type: [Breakfast/Main/Dessert])"
+2. Cuisine & Technique chosen.
+3. Ingredient Weights: Define exact raw/dry weights.
+4. Macro Math: Write out addition equation to prove math (e.g., Protein: 25g + 15g = 40g). Use strict USDA raw/dry values.
 YOU MUST CLOSE WITH </thinking> BEFORE STARTING [RECIPE].
 
 STEP 2: OUTPUT STRUCTURAL MANDATE
@@ -275,6 +245,7 @@ The ingredient amounts in the recipe MUST perfectly match the amounts decided in
 EXAMPLE OUTPUT FORMAT:
 
 <thinking>
+- Recipe 1 of ${totalMeals} (Type: Main)
 - Cuisine Target: Levantine (Garlic-lemon sumac chicken)
 - Weights: 115g chicken breast, 150g dry pasta, 8g olive oil
 - Protein Math: 35g (chicken) + 5g (pasta) = 40g
@@ -292,12 +263,12 @@ EXAMPLE OUTPUT FORMAT:
 - 150g dry pasta
 - 8g olive oil
 - 20g bell pepper (to buy)
-...
+
 **Instructions:**
-...
+1. Cook ingredients...
+
 **Nutrition (Approximate):** 40g protein, 106g carbs, 10g fat
 [/RECIPE]`;
-    
 
     try {
       const controller = new AbortController();
@@ -346,7 +317,6 @@ EXAMPLE OUTPUT FORMAT:
     const container = document.getElementById('recipe-container');
     container.innerHTML = '';
     
-    // Pattern to match pairs of <thinking>...</thinking> and [RECIPE]...[/RECIPE]
     const pairRegex = /(?:<thinking>([\s\S]*?)<\/thinking>[\s\r\n]*)?\[RECIPE\]([\s\S]*?)\[\/RECIPE\]/gi;
     let match;
     let index = 0;
@@ -361,7 +331,6 @@ EXAMPLE OUTPUT FORMAT:
       index++;
     }
 
-    // Fallback: If [RECIPE] tags were omitted, fall back to header splitting
     if (!foundMatches) {
       let cleanedText = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').trim();
       let rawBlocks = [];
@@ -407,7 +376,6 @@ EXAMPLE OUTPUT FORMAT:
 
     div.appendChild(saveBtn);
     
-    // Add Expandable Thinking Block if available
     if (thinkingText) {
       const details = document.createElement('details');
       details.style.cssText = "margin-bottom: 12px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid var(--border);";
