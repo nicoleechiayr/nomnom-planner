@@ -189,6 +189,39 @@
     document.getElementById('loader').style.display = 'flex';
     const pantryContext = masterPantry.map(p => `${p.name}: ${p.qty}`).join(', ');
 
+  const allCuisines = [
+  // East & Southeast Asia
+  "Sichuan", "Cantonese", "Hunan", "Shaanxi", "Yunnan", "Guizhou", "Xinjiang", 
+  "Taiwanese", "Teochew", "Hakka", "Hokkien", "Isan", "Northern Thai", 
+  "Southern Thai", "Peranakan", "Javanese", "Balinese", "Minangkabau", 
+  "Sundanese", "Korean", "Okinawan", "Vietnamese (Central/Hue)", "Burmese", "Filipino",
+
+  // South Asia
+  "Chettinad", "Kerala", "Goan", "Bengali", "Sri Lankan", "Mughlai", 
+  "Hyderabadi", "Gujarati", "Rajasthani", "Kashmiri", "Punjabi", "Maharashtrian",
+
+  // Middle East & Central Asia
+  "Levantine", "Maghrebi", "Persian", "Anatolian", "Yemeni", "Georgian", 
+  "Uzbek", "Kurdish", "Armenian", "Lebanese", "Palestinian", "Moroccan", "Tunisian",
+
+  // Europe & Mediterranean
+  "Sicilian", "Tuscan", "Neapolitan", "Emilia-Romagna", "Pugliese", "Basque", 
+  "Catalan", "Andalusian", "Galician", "Provencal", "Cretan", "Hungarian", "Bavarian",
+
+  // Americas & Caribbean
+  "Oaxacan", "Yucatecan", "Poblano", "Peruvian", "Bahian", "Jamaican", 
+  "Trinidadian", "Cajun", "Creole", "Cuban", "Colombian", "Lowcountry", "Tex-Mex",
+
+  // Africa
+  "West African", "Ethiopian", "Swahili Coast", "Cape Malay", "Nigerian", 
+  "Senegalese", "Ghanaian", "Eritrean"
+];
+
+    const selectedCuisines = allCuisines
+  .sort(() => 0.5 - Math.random())
+  .slice(0, 3)
+  .join(", ");
+
     const prompt = `System: Creative Culinary Architect & Macro Specialist.
 
 CORE MISSION:
