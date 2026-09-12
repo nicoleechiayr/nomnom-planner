@@ -222,43 +222,42 @@
   .slice(0, 3)
   .join(", ");
 
-    const prompt = `System: Creative Culinary Architect & Macro Specialist.
+    
+    const prompt = `Role: Culinary Architect & Macro Specialist.
 
-CORE MISSION:
-- Create high-quality, diverse, professional recipes within strict nutritional parameters.
-- PRIMARY FOCUS: You MUST incorporate the "Selected Ingredients" below. You do not need to use the entire quantity provided.
-- CREATIVE FREEDOM: You are encouraged to suggest additional ingredients (staples, aromatics, spices, specialty items) to ensure dishes are cohesive, vibrant, and authentic. 
-- MANDATORY CUISINE DIVERSITY: Avoid generic stir-fries, plain baked proteins, or basic pasta dishes. 
+Task: Generate EXACTLY ${totalMeals} standalone, single-serving recipe(s) matching this breakdown:
+- Breakfast: ${counts.breakfast} recipe(s)
+- Main Savory Meals: ${counts.mains} recipe(s)
+- Dessert: ${counts.dessert} recipe(s)
 
-QUANTITY MANDATE & SERVING LOGIC:
-- TOTAL MEAL COVERAGE REQUIRED: ${totalMeals} total meal slot(s) (${counts.breakfast} Breakfast, ${counts.mains} Main Meals, ${counts.dessert} Dessert).
-- SERVING STRICTNESS: The total servings produced across all recipes MUST EQUAL ${totalMeals}.
-  * Option A (Separate Dishes): Output EXACTLY ${totalMeals} standalone [RECIPE]...[/RECIPE] blocks, each serving 1 person (**Serves:** 1).
-  * Option B (Batch Cooking): If you output fewer than ${totalMeals} recipe blocks, you MUST scale the recipe yield to cover the remaining slots (e.g., set "**Serves:** ${totalMeals}" AND multiply all raw ingredient weights and total macro calculations by ${totalMeals}).
-- ABSOLUTE RULE: Never generate 1 single-serving recipe when ${totalMeals} meals are requested.
+Strict Rules:
+1. QUANTITY: You MUST output EXACTLY ${totalMeals} separate [RECIPE]...[/RECIPE] blocks (Serves: 1 per block).
+2. INGREDIENTS: Use required items: [${sel.join(', ')}]. Additional pantry available: [${pantryContext}].
+3. CUISINE INSPIRATION: Draw style from: ${selectedCuisines}.
+4. INVENTORY LOGIC: Protein powders, oats, and sweet syrups are allowed ONLY in Breakfast/Dessert. Mains must use whole-food proteins.
+5. MACROS (per meal): ~40g Protein, 10-15g Fat, 30-40g Carbs (Grains measured DRY).
+6. SPECIAL NOTES: ${document.getElementById('notes').value}
+7. You MUST incorporate the user selected ingredients. You do not need to use the entire quantity provided, and are encouraged to suggest additional staples, aromatics, spices, or specialty items for cohesion and authenticity. Add a "(To Buy)" in the output in case user has to purchase this ingredient.
 
-MACRO GUIDELINES (Flexible):
-Estimate calories, protein, carbs, and fats based on standard USDA nutritional values for given weights.
-Calculate all rice/pasta/grain weights assuming DRY mass.
-- Target Protein: ~40g (Primary focus)
-- Target Fat: 10-15g
-- Target Carbs: 30-40g (up to 70g acceptable)
+Output Format (Repeat EXACTLY ${totalMeals} times):
 
-SPICE AND PANTRY LOGIC: 
-- 1 bottle/jar dry spice = standard 1 tsp (~5g) usage in calculations (macro-negligible).
+<thinking>
+- Recipe [X] of ${totalMeals} (Type: [Breakfast/Main/Dessert])
+- Cuisine & Raw Weights
+- Macro Math: Protein (Xg) + Carbs (Yg) + Fat (Zg)
+</thinking>
+[RECIPE]
+## Recipe Title
+**Serves:** 1  
+**Prep Time:** X mins | **Cook Time:** Y mins
 
-STRICT INVENTORY LOGIC:
-- SUPPLEMENT FIREWALL: Use protein powders and sweet syrups ONLY for Breakfast or Dessert. 
-- use oat bran or oats ONLY for breakfast or Dessert, not for main meals.
-- SAVORY BASE: Main Meals must be built around whole-food protein from Selected Ingredients.
-
-INPUT DATA:
-- TOTAL RECIPES REQUIRED TO GENERATE: ${totalMeals}
-- Meal Breakdown: ${counts.breakfast} Breakfast, ${counts.mains} Main Savory Meals, ${counts.dessert} Dessert.
-- Selected Ingredients (Required): [${sel.join(', ')}]
-- Remaining Inventory (Available if needed): [${pantryContext}]
-- Additional Notes: ${document.getElementById('notes').value}
-
+**Ingredients:**
+- ...
+**Instructions:**
+- ...
+**Nutrition:** Xg protein, Yg carbs, Zg fat
+[/RECIPE]`;
+    
 EXECUTION WORKFLOW FOR EVERY SINGLE RECIPE:
 For EVERY recipe (repeat sequence ${totalMeals} times):
 
@@ -298,6 +297,7 @@ EXAMPLE OUTPUT FORMAT:
 ...
 **Nutrition (Approximate):** 40g protein, 106g carbs, 10g fat
 [/RECIPE]`;
+    
 
     try {
       const controller = new AbortController();
